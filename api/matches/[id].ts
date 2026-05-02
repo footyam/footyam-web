@@ -1,7 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-const TOP_LEAGUES = ['PL', 'PD', 'BL1', 'SA', 'FL1'];
-
 const leagueMap: Record<string, string> = {
   PL: 'Premier League',
   PD: 'La Liga',
@@ -10,31 +8,25 @@ const leagueMap: Record<string, string> = {
   FL1: 'Ligue 1',
 };
 
-const allowedCodes = new Set(TOP_LEAGUES);
-
-async function footballRequest(pathname: string, searchParams: Record<string, string>) {
+async function footballRequest(pathname: string) {
   const API_KEY = process.env.FOOTBALL_DATA_API_KEY;
 
   if (!API_KEY) {
     throw new Error('FOOTBALL_DATA_API_KEY is missing');
   }
 
-  const url = new URL(`https://api.football-data.org/v4/${pathname}`);
+  const url = `https://api.football-data.org/v4/${pathname}`;
 
-  for (const [k, v] of Object.entries(searchParams)) {
-    if (v) url.searchParams.set(k, v);
-  }
-
-  const apiRes = await fetch(url, {
+  const res = await fetch(url, {
     headers: {
       'X-Auth-Token': API_KEY,
     },
   });
 
-  const text = await apiRes.text();
+  const text = await res.text();
 
-  if (!apiRes.ok) {
-    throw new Error(`football-data failed: ${apiRes.status} ${text}`);
+  if (!res.ok) {
+    throw new Error(`football-data failed: ${res.status} ${text}`);
   }
 
   return JSON.parse(text);
@@ -61,41 +53,15 @@ function mapMatch(item: any) {
   };
 }
 
-async function fetchRecentMatches() {
-  const dateFrom = new Date();
-  const dateTo = new Date();
-
-  dateFrom.setUTCDate(dateFrom.getUTCDate() - 7);
-  dateTo.setUTCDate(dateTo.getUTCDate() + 2);
-
-  let all: any[] = [];
-
-  for (const code of TOP_LEAGUES) {
-    const data = await footballRequest(`competitions/${code}/matches`, {
-      dateFrom: dateFrom.toISOString().slice(0, 10),
-      dateTo: dateTo.toISOString().slice(0, 10),
-    });
-
-    all = all.concat(data.matches ?? []);
-  }
-
-  return all
-    .filter((m) => allowedCodes.has(m.competition?.code))
-    .map(mapMatch)
-    .sort((a, b) => Date.parse(b.datetime) - Date.parse(a.datetime));
-}
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const id = String(req.query.id);
-    const matches = await fetchRecentMatches();
-    const match = matches.find((m) => m.id === id);
 
-    if (!match) {
-      return res.status(404).json({ error: 'Match not found' });
-    }
+    const data = await footballRequest(`matches/${id}`);
 
-    return res.status(200).json(match);
+    const mapped = mapMatch(data.match);
+
+    return res.status(200).json(mapped);
   } catch (err) {
     return res.status(500).json({
       error: 'Failed to fetch match',
