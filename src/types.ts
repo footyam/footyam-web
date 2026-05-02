@@ -1,4 +1,4 @@
-export type League = 'Premier League' | 'J League' | 'La Liga' | 'Bundesliga' | string;
+export type League = 'Premier League' | 'La Liga' | 'Bundesliga' | 'Serie A' | 'Ligue 1' | 'International' | string;
 
 export type MatchStatus = 'finished' | 'upcoming';
 

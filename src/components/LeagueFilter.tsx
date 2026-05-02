@@ -7,8 +7,8 @@ interface LeagueFilterProps {
 
 export function LeagueFilter({ selected, onSelect }: LeagueFilterProps) {
   return (
-    <div className="-mx-4 overflow-x-auto px-4 pb-1">
-      <div className="flex gap-2">
+    <div className="pb-1">
+      <div className="flex flex-wrap gap-2">
         {LEAGUES.map((league) => (
           <button
             key={league}

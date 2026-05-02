@@ -3,3 +3,7 @@ dist
 .vscode
 .DS_Store
 .env
+.env
+highlight-cache.json
+matches.json
+playlist-state.json

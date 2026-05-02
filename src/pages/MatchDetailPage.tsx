@@ -1,123 +1,142 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import type { AppLanguage } from '../hooks/useLanguage';
+import type { User } from 'firebase/auth';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ShareMatchButton } from '../components/ShareMatchButton';
+import { VideoEmbed } from '../components/VideoEmbed';
+import { ENABLE_ACCOUNT_FEATURES } from '../config/features';
 import type { HighlightSourceOption, Match } from '../types';
 import { fetchHighlightSources, fetchMatchById } from '../utils/api';
 import { formatDateTime } from '../utils/date';
 
+interface NotificationSettings {
+  enabled: boolean;
+}
+
 interface MatchDetailPageProps {
   blindMode: boolean;
   onWatch: (homeTeam: string, awayTeam: string, league: string) => void;
-  language: AppLanguage;
+  favorites: string[];
+  notificationSettings: NotificationSettings;
+  manualNotifyMatchIds: string[];
+  manualMutedMatchIds: string[];
+  onTurnOnMatchNotification: (matchId: string) => void;
+  onTurnOffMatchNotification: (matchId: string) => void;
+  user: User | null;
 }
 
-const sourcePriorityByLanguage: Record<AppLanguage, Record<string, string[]>> = {
-  ja: {
-    'Premier League': ['U-NEXTフットボール', 'U-NEXT', 'DAZN Japan', 'DAZN', 'Premier League'],
-    'La Liga': ['U-NEXTフットボール', 'DAZN Japan', 'DAZN', 'LaLiga'],
-    Bundesliga: ['DAZN Japan', 'DAZN', 'Bundesliga'],
-    'J League': ['Jリーグ公式', 'DAZN Japan', 'DAZN'],
-  },
-  en: {
-    'Premier League': ['Premier League', 'Sky Sports', 'NBC Sports', 'ESPN'],
-    'La Liga': ['LaLiga', 'ESPN'],
-    Bundesliga: ['Bundesliga', 'Sky Sports', 'ESPN'],
-    'J League': ['J League'],
-  },
+const sourcePriorityByLeague: Record<string, string[]> = {
+  'Premier League': ['U-NEXTフットボール', 'U-NEXT', 'DAZN Japan', 'DAZN', 'Premier League'],
+  'La Liga': ['DAZN Japan', 'DAZN', 'U-NEXTフットボール', 'U-NEXT', 'LaLiga'],
+  Bundesliga: ['DAZN Japan', 'DAZN', 'Bundesliga'],
+  'Serie A': ['DAZN Japan', 'DAZN'],
+  'Ligue 1': ['DAZN Japan', 'DAZN'],
+  'J League': ['Jリーグ公式', 'DAZN Japan', 'DAZN'],
 };
 
-function getPriority(language: AppLanguage, league: string, sourceName: string): number {
-  const list = sourcePriorityByLanguage[language]?.[league] ?? [];
+function getPriority(league: string, sourceName: string): number {
+  const list = sourcePriorityByLeague[league] ?? [];
   const idx = list.findIndex((name) => name.toLowerCase() === sourceName.toLowerCase());
   return idx === -1 ? 999 : idx;
 }
 
-function getRecommendedLabel(language: AppLanguage): string {
-  return language === 'ja' ? 'おすすめ' : 'Recommended';
-}
-
-function shouldShowRecheck(statusMessage: string | null): boolean {
-  if (!statusMessage) return false;
-  const lower = statusMessage.toLowerCase();
-  return (
-    statusMessage.includes('まだ公開') ||
-    lower.includes('not uploaded') ||
-    lower.includes('no official highlights')
-  );
+function formatMatchStatus(status: string): string {
+  if (status === 'finished') return 'Finished';
+  if (status === 'upcoming') return 'Upcoming';
+  if (status === 'live') return 'Live';
+  return status;
 }
 
 function isDirectVideo(source: HighlightSourceOption): boolean {
   return Boolean(source.videoUrl);
 }
 
-function getSourceCta(source: HighlightSourceOption, language: AppLanguage): string {
-  if (isDirectVideo(source)) {
-    return language === 'ja' ? 'ここで再生' : 'Play here';
-  }
-  return language === 'ja' ? '公式チャンネルへ' : 'Visit official channel';
+function getSourceDestination(source: HighlightSourceOption): string {
+  return source.videoUrl ?? source.channelUrl ?? '#';
 }
 
-function toEmbedUrl(videoUrl?: string | null): string | null {
-  if (!videoUrl) return null;
+function getSourceCta(source: HighlightSourceOption): string {
+  if (isDirectVideo(source)) return 'Watch Highlights';
+  if (source.channelUrl) return 'Official Channel';
+  return 'Not Available Yet';
+}
 
+function getYouTubeVideoId(videoUrl: string): string | null {
   try {
     const url = new URL(videoUrl);
-    const videoId = url.searchParams.get('v');
-    if (!videoId) return null;
-    return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
+
+    if (url.hostname === 'youtu.be') {
+      return url.pathname.split('/').filter(Boolean)[0] ?? null;
+    }
+
+    const directId = url.searchParams.get('v');
+    if (directId) return directId;
+
+    const pathParts = url.pathname.split('/').filter(Boolean);
+    if (pathParts[0] === 'embed' && pathParts[1]) return pathParts[1];
+    if (pathParts[0] === 'shorts' && pathParts[1]) return pathParts[1];
+
+    return null;
   } catch {
     return null;
   }
 }
 
-export function MatchDetailPage({ blindMode, onWatch, language }: MatchDetailPageProps) {
+export function MatchDetailPage({
+  blindMode,
+  onWatch,
+  favorites,
+  notificationSettings,
+  manualNotifyMatchIds,
+  manualMutedMatchIds,
+  onTurnOnMatchNotification,
+  onTurnOffMatchNotification,
+  user,
+}: MatchDetailPageProps) {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [revealed, setRevealed] = useState(false);
   const [match, setMatch] = useState<Match | null>(null);
   const [sources, setSources] = useState<HighlightSourceOption[]>([]);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [rechecking, setRechecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedVideo, setSelectedVideo] = useState<{
+    url: string;
+    id: string;
+    sourceKey: string;
+  } | null>(null);
 
-  const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(null);
-  const [selectedSourceName, setSelectedSourceName] = useState<string | null>(null);
+  const loadSources = useCallback(async (targetMatch: Match) => {
+    const result = await fetchHighlightSources({
+      matchId: targetMatch.id,
+      league: targetMatch.league,
+      homeTeam: targetMatch.homeTeam,
+      awayTeam: targetMatch.awayTeam,
+      language: 'ja',
+      status: targetMatch.status,
+      datetime: targetMatch.datetime,
+    }).catch(() => ({
+      sources: [],
+      statusMessage: 'No official highlights available yet.',
+    }));
 
-  const loadSources = useCallback(
-    async (targetMatch: Match, isRecheck = false) => {
-      if (isRecheck) setRechecking(true);
-
-      const result = await fetchHighlightSources({
-        league: targetMatch.league,
-        homeTeam: targetMatch.homeTeam,
-        awayTeam: targetMatch.awayTeam,
-        language,
-        status: targetMatch.status,
-        datetime: targetMatch.datetime,
-      }).catch(() => ({
-        sources: [],
-        statusMessage: 'まだ公式ハイライトが見つかりません',
-      }));
-
-      setSources(result.sources ?? []);
-      setStatusMessage(result.statusMessage ?? null);
-
-      if (isRecheck) setRechecking(false);
-    },
-    [language],
-  );
+    setSources(result.sources ?? []);
+    setStatusMessage(result.statusMessage ?? null);
+  }, []);
 
   useEffect(() => {
     if (!id) {
       setLoading(false);
-      setError('試合IDが不正です。');
+      setError('Invalid match ID.');
       return;
     }
 
     let cancelled = false;
+
     setLoading(true);
     setError(null);
+    setSelectedVideo(null);
 
     fetchMatchById(id)
       .then(async (m) => {
@@ -127,13 +146,11 @@ export function MatchDetailPage({ blindMode, onWatch, language }: MatchDetailPag
       })
       .catch((err: unknown) => {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : '試合詳細の取得に失敗しました。');
+          setError(err instanceof Error ? err.message : 'Failed to load match details.');
         }
       })
       .finally(() => {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        if (!cancelled) setLoading(false);
       });
 
     return () => {
@@ -143,265 +160,260 @@ export function MatchDetailPage({ blindMode, onWatch, language }: MatchDetailPag
 
   const sortedSources = useMemo(() => {
     if (!match) return sources;
+
     return [...sources].sort((a, b) => {
-      const aPriority = getPriority(language, match.league, a.sourceName);
-      const bPriority = getPriority(language, match.league, b.sourceName);
-      if (aPriority !== bPriority) return aPriority - bPriority;
-      return 0;
+      const aPriority = getPriority(match.league, a.sourceName);
+      const bPriority = getPriority(match.league, b.sourceName);
+      return aPriority - bPriority;
     });
-  }, [sources, language, match]);
-
-  const featuredSource = sortedSources[0];
-  const secondarySources = sortedSources.slice(1);
-  const embedUrl = useMemo(() => toEmbedUrl(selectedVideoUrl), [selectedVideoUrl]);
-
-  const handlePlaySource = useCallback(
-    (source: HighlightSourceOption) => {
-      if (!match || !source.videoUrl) return;
-
-      setSelectedVideoUrl(source.videoUrl);
-      setSelectedSourceName(source.sourceName);
-      onWatch(match.homeTeam, match.awayTeam, match.league);
-    },
-    [match, onWatch],
-  );
+  }, [sources, match]);
 
   if (loading) {
-    return <main className="mx-auto max-w-5xl p-4 text-slate-300">試合情報を読み込み中…</main>;
+    return <main className="mx-auto max-w-5xl p-4 text-slate-300">Loading match details...</main>;
   }
 
   if (error || !match) {
     return (
       <div className="mx-auto max-w-5xl p-4 text-slate-200">
-        <p>{error ?? '一致するものが見つかりません。'}</p>
+        <p>{error ?? 'Match not found.'}</p>
         <Link to="/" className="mt-3 inline-block text-brand-500">
-          ホームに戻る
+          Back to Home
         </Link>
       </div>
     );
   }
 
   const showResult = !blindMode || revealed;
-  const recommendLabel = getRecommendedLabel(language);
+  const noHighlightsLabel = 'No official highlights available yet.';
+  const closePlayerLabel = 'Close';
+  const openOnYouTubeLabel = 'Open on YouTube';
+
+  const isFavoriteMatch =
+    favorites.includes(match.homeTeam) || favorites.includes(match.awayTeam);
+
+  const isNotifyOn =
+    manualNotifyMatchIds.includes(match.id) ||
+    (
+      isFavoriteMatch &&
+      notificationSettings.enabled &&
+      !manualMutedMatchIds.includes(match.id)
+    );
+
+  const hasDirectHighlight = sortedSources.some((source) => source.videoUrl);
+  const shouldShowNotifySwitch =
+    ENABLE_ACCOUNT_FEATURES && (match.status === 'upcoming' || !hasDirectHighlight);
+
+  const toggleMatchNotification = () => {
+    if (!user) {
+      navigate('/signin');
+      return;
+    }
+
+    if (isNotifyOn) {
+      onTurnOffMatchNotification(match.id);
+    } else {
+      onTurnOnMatchNotification(match.id);
+    }
+  };
+
+  const openEmbeddedVideo = (source: HighlightSourceOption) => {
+    if (!source.videoUrl) return;
+
+    const videoId = getYouTubeVideoId(source.videoUrl);
+
+    if (!videoId) {
+      window.open(source.videoUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    setSelectedVideo({
+      url: source.videoUrl,
+      id: videoId,
+      sourceKey: source.sourceName,
+    });
+
+    onWatch(match.homeTeam, match.awayTeam, match.league);
+  };
 
   return (
     <main className="mx-auto max-w-5xl space-y-4 px-4 py-5">
       <Link to="/" className="text-sm text-brand-500">
-        ← 戻る
+        ← Back
       </Link>
 
       <section className="rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-card">
-        <p className="text-xs text-slate-400">{match.league}</p>
-        <h1 className="mt-1 text-xl font-bold text-white">
-          {match.homeTeam} vs {match.awayTeam}
-        </h1>
-        <p className="text-sm text-slate-300">
-          {formatDateTime(match.datetime)} ・ {match.status === 'finished' ? '終了' : '予定'}
-        </p>
+        <div className="flex flex-col gap-2">
+          <div>
+            <p className="text-xs text-slate-400">{match.league}</p>
+            <h1 className="mt-1 text-xl font-bold text-white">
+              {match.homeTeam} vs {match.awayTeam}
+            </h1>
+            <p className="text-sm text-slate-300">
+              {formatDateTime(match.datetime)} ・ {formatMatchStatus(match.status)}
+            </p>
+          </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          {!showResult && (
-            <button
-              onClick={() => setRevealed(true)}
-              className="rounded-lg border border-brand-500 px-3 py-2 text-sm text-brand-500"
-            >
-              結果を表示
-            </button>
-          )}
-
-          {showResult && (
-            <>
-              <p className="text-lg font-semibold text-white">
-                {match.score ? `${match.score.home} - ${match.score.away}` : 'スコア未確定'}
-              </p>
-              {blindMode && (
+          <div className="mt-1 flex flex-wrap items-start justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {!showResult && (
                 <button
-                  onClick={() => setRevealed(false)}
-                  className="rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-200"
+                  onClick={() => setRevealed(true)}
+                  className="rounded-lg border border-brand-500 px-3 py-2 text-sm text-brand-500"
                 >
-                  結果を隠す
+                  Show Result
                 </button>
               )}
-            </>
-          )}
+
+              {showResult && (
+                <>
+                  <p className="text-lg font-semibold text-white">
+                    {match.score ? `${match.score.home} - ${match.score.away}` : 'Score TBD'}
+                  </p>
+
+                  {blindMode && (
+                    <button
+                      onClick={() => setRevealed(false)}
+                      className="rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-200"
+                    >
+                      Hide Result
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3 self-start">
+              {shouldShowNotifySwitch && (
+                <button
+                  type="button"
+                  onClick={toggleMatchNotification}
+                  aria-label={isNotifyOn ? 'Turn off match notification' : 'Turn on match notification'}
+                  className={`relative h-8 w-14 rounded-full transition ${
+                    isNotifyOn
+                      ? 'bg-brand-500'
+                      : 'border border-brand-500 bg-slate-900'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-1 flex h-6 w-6 items-center justify-center rounded-full transition ${
+                      isNotifyOn
+                        ? 'right-1 bg-white'
+                        : 'left-1 bg-brand-500'
+                    }`}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke={isNotifyOn ? '#10b981' : 'white'}
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-3.5 w-3.5"
+                    >
+                      <path d="M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7" />
+                      <path d="M13.73 21a2 2 0 01-3.46 0" />
+                    </svg>
+                  </span>
+                </button>
+              )}
+
+              <ShareMatchButton
+                matchId={Number(match.id)}
+                homeTeam={match.homeTeam}
+                awayTeam={match.awayTeam}
+              />
+            </div>
+          </div>
         </div>
       </section>
 
-      {embedUrl && (
-        <section className="overflow-hidden rounded-2xl border border-brand-500/40 bg-slate-950 shadow-card">
-          <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-slate-400">
-                {language === 'ja' ? '再生中' : 'Now playing'}
-              </p>
-              <p className="text-sm font-semibold text-white">
-                {selectedSourceName ?? (language === 'ja' ? '公式ハイライト' : 'Official highlight')}
-              </p>
-            </div>
-            <button
-              onClick={() => {
-                setSelectedVideoUrl(null);
-                setSelectedSourceName(null);
-              }}
-              className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-200 transition hover:border-slate-500"
-            >
-              {language === 'ja' ? '閉じる' : 'Close'}
-            </button>
-          </div>
-
-          <div className="aspect-video w-full bg-black">
-            <iframe
-              src={embedUrl}
-              title="Highlight player"
-              className="h-full w-full"
-              allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-              allowFullScreen
-            />
-          </div>
-        </section>
-      )}
-
       <section className="space-y-3 rounded-2xl border border-slate-800 bg-slate-900 p-4">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">
-          公式ハイライト視聴先
+          Official Highlights
         </h2>
 
-        {statusMessage && <p className="text-sm text-slate-400">{statusMessage}</p>}
-
-        {shouldShowRecheck(statusMessage) && (
-          <button
-            onClick={() => loadSources(match, true)}
-            disabled={rechecking}
-            className="rounded-lg border border-brand-500 px-3 py-2 text-sm text-brand-500 disabled:opacity-50"
-          >
-            {rechecking
-              ? language === 'ja'
-                ? '再チェック中…'
-                : 'Checking…'
-              : language === 'ja'
-                ? '再チェック'
-                : 'Check again'}
-          </button>
-        )}
-
         {sortedSources.length === 0 ? (
-          <p className="text-sm text-slate-400">
-            {language === 'ja' ? '公式ハイライトはまだ見つかっていません。' : 'No official highlights available yet'}
-          </p>
+          <p className="text-sm text-slate-400">{statusMessage ?? noHighlightsLabel}</p>
         ) : (
           <div className="space-y-3">
-            {featuredSource &&
-              (() => {
-                const priority = getPriority(language, match.league, featuredSource.sourceName);
-                const recommended = featuredSource.isRecommended || priority <= 1;
-                const directVideo = isDirectVideo(featuredSource);
-                const ctaLabel = getSourceCta(featuredSource, language);
+            {match.status === 'finished' && !hasDirectHighlight && (
+  <p className="text-sm text-slate-400">
+    Highlights not available yet
+  </p>
+)}
+            {statusMessage && (
+              <p className="text-sm text-slate-400">{statusMessage}</p>
+            )}
 
-                return (
-                  <article className="overflow-hidden rounded-2xl border border-brand-500/60 bg-gradient-to-b from-brand-500/20 to-slate-950/60 shadow-card">
-                    <div className="space-y-3 p-4">
-                      <div className="flex items-center gap-2">
-                        <span className="rounded-full bg-brand-500 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-950">
-                          Top pick
-                        </span>
-                        {recommended && (
-                          <span className="rounded-full bg-brand-500/20 px-2 py-1 text-[10px] font-semibold text-brand-300">
-                            {recommendLabel}
-                          </span>
-                        )}
-                      </div>
-
-                      {directVideo ? (
-                        <button
-                          type="button"
-                          onClick={() => handlePlaySource(featuredSource)}
-                          className="block w-full rounded-xl border border-brand-500 bg-brand-500/20 px-4 py-3 text-left text-base font-semibold text-brand-200 transition hover:bg-brand-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-                        >
-                          <span className="inline-flex items-center gap-2">
-                            {featuredSource.sourceName}
-                            <span aria-hidden>▶</span>
-                          </span>
-                          <span className="mt-1 block text-xs font-normal text-slate-300">{ctaLabel}</span>
-                        </button>
-                      ) : (
-                        <a
-                          href={featuredSource.channelUrl ?? '#'}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block rounded-xl border border-slate-600 bg-slate-900/60 px-4 py-3 text-left text-base font-semibold text-slate-100 transition hover:border-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
-                        >
-                          <span className="inline-flex items-center gap-2">
-                            {featuredSource.sourceName}
-                            <span aria-hidden>↗</span>
-                          </span>
-                          <span className="mt-1 block text-xs font-normal text-slate-300">{ctaLabel}</span>
-                        </a>
-                      )}
-                    </div>
-                  </article>
-                );
-              })()}
-
-            {secondarySources.map((source) => {
-              const priority = getPriority(language, match.league, source.sourceName);
-              const recommended = source.isRecommended || priority <= 1;
+            {sortedSources.map((source) => {
               const directVideo = isDirectVideo(source);
-              const ctaLabel = getSourceCta(source, language);
+              const destination = getSourceDestination(source);
+              const ctaLabel = getSourceCta(source);
+              const isOpen = selectedVideo?.sourceKey === source.sourceName;
 
               return (
                 <article
-                  key={`${source.sourceName}-${source.videoUrl ?? source.channelUrl ?? 'fallback'}`}
-                  className={`rounded-xl border p-3 transition ${
-                    directVideo
-                      ? 'border-brand-500/40 bg-brand-500/10'
-                      : 'border-slate-700 bg-slate-950/30 opacity-90'
-                  }`}
+                  key={source.sourceName}
+                  className="rounded-2xl border border-slate-700 bg-slate-950/30 p-3"
                 >
-                  <div className="flex items-center gap-2">
-                    {directVideo ? (
+                  {directVideo ? (
+                    isOpen && selectedVideo ? (
+                      <div className="space-y-3">
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedVideo(null)}
+                            className="rounded-xl border border-slate-500 bg-slate-900 px-5 py-2 text-sm font-semibold text-slate-100 transition hover:border-brand-500 hover:text-brand-500"
+                          >
+                            {closePlayerLabel}
+                          </button>
+                        </div>
+
+                        <VideoEmbed videoId={selectedVideo.id} />
+
+                        <a
+                          href={selectedVideo.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex rounded-xl border border-slate-600 px-4 py-2 text-sm font-semibold text-slate-200"
+                        >
+                          {openOnYouTubeLabel}
+                        </a>
+                      </div>
+                    ) : (
                       <button
                         type="button"
-                        onClick={() => handlePlaySource(source)}
-                        className="flex-1 rounded-lg border border-brand-500 bg-brand-500/20 px-3 py-2 text-left text-sm font-semibold text-brand-300 transition hover:bg-brand-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                        onClick={() => openEmbeddedVideo(source)}
+                        className="block w-full rounded-xl border border-brand-500 bg-brand-500/20 px-4 py-3 text-left text-base font-semibold text-brand-200"
                       >
-                        <span className="inline-flex items-center gap-1">
-                          {source.sourceName}
-                          <span aria-hidden>▶</span>
+                        <span className="inline-flex items-center gap-2">
+                          <span>▶</span>
+                          <span>Watch Highlights</span>
                         </span>
-                        <span className="mt-0.5 block text-[11px] font-normal text-slate-300">{ctaLabel}</span>
+
+                        <span className="mt-1 block text-xs font-normal text-slate-300">
+                          {source.sourceName}
+                        </span>
                       </button>
-                    ) : (
-                      <a
-                        href={source.channelUrl ?? '#'}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1 rounded-lg border border-slate-600 bg-transparent px-3 py-2 text-left text-sm font-semibold text-slate-200 transition hover:border-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
-                      >
-                        <span className="inline-flex items-center gap-1">
-                          {source.sourceName}
-                          <span aria-hidden>↗</span>
-                        </span>
-                        <span className="mt-0.5 block text-[11px] font-normal text-slate-300">{ctaLabel}</span>
-                      </a>
-                    )}
-
-                    {recommended && (
-                      <span className="rounded-full bg-brand-500/20 px-2 py-1 text-[10px] font-semibold text-brand-400">
-                        {recommendLabel}
+                    )
+                  ) : (
+                    <a
+                      href={destination}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block rounded-xl border border-slate-600 bg-slate-900/60 px-4 py-3 text-left text-sm font-semibold text-slate-200"
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        {source.sourceName}
+                        <span>↗</span>
                       </span>
-                    )}
 
-                    {source.channelUrl && directVideo && (
-                      <a
-                        href={source.channelUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="rounded-lg border border-slate-600 px-3 py-2 text-xs text-slate-200 transition hover:border-slate-400"
-                      >
-                        公式
-                      </a>
-                    )}
-                  </div>
+                      <span className="mt-1 block text-xs font-normal text-slate-300">
+                        {ctaLabel}
+                      </span>
+                    </a>
+                  )}
                 </article>
               );
             })}
