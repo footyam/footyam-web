@@ -8,22 +8,20 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'matchId required' });
     }
 
-    // ① YouTube検索（仮）
     const video = {
-      videoUrl: "https://www.youtube.com/watch?v=dummy",
-      title: "test highlight"
+      videoUrl: 'https://www.youtube.com/watch?v=dummy',
+      title: 'test highlight',
     };
 
-    // ② Blobに保存
     const key = `highlights/${matchId}.json`;
 
     await put(key, JSON.stringify(video), {
       access: 'public',
+      addRandomSuffix: false,
     });
 
-    return res.json({ ok: true, saved: key });
-
+    return res.status(200).json({ ok: true, saved: key });
   } catch (e) {
-    return res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: String(e?.message ?? e) });
   }
 }
