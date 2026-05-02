@@ -1,6 +1,6 @@
 import type { HighlightSourcesResponse, Match } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '';
+const API_BASE_URL = '';
 
 export async function fetchRecentMatches(): Promise<Match[]> {
   const response = await fetch(`${API_BASE_URL}/api/matches/recent`);
