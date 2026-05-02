@@ -9,3 +9,8 @@ matches.json
 playlist-state.json
 highlight-learning.json
 *_backup.tsx
+
+*.tsbuildinfo
+*.png
+vite.config.js
+vite.config.d.ts

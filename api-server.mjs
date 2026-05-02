@@ -19,7 +19,7 @@ loadEnvFile();
 
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY;
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
-const PORT = Number(process.env.PORT ?? 8787);
+const PORT = process.env.PORT || process.env.API_PORT || 8787;
 const DEBUG = true;
 
 // =========================
