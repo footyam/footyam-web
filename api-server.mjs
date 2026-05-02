@@ -421,9 +421,13 @@ async function fetchRecentMatches() {
 
       all = all.concat(data.matches ?? []);
     } catch (e) {
-      failed = true;
-      console.error('skip', code, e instanceof Error ? e.message : e);
-    }
+  failed = true;
+  console.error(
+    'skip',
+    code,
+    e instanceof Error ? e.stack || e.message : e
+  );
+}
   }
 
   // どれか失敗した時に、前回の正常キャッシュがあるならそれを使う
@@ -473,9 +477,10 @@ async function youtubeRequest(pathname, searchParams = {}) {
   const res = await fetch(url);
 
   if (!res.ok) {
-    const txt = await res.text().catch(() => '');
-    throw new Error(`youtube error ${res.status} ${txt}`);
-  }
+  const text = await res.text();
+  console.error('football-data error:', res.status, text);
+  throw new Error('football-data fetch failed');
+}
 
   return res.json();
 }
