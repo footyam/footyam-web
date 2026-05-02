@@ -1,0 +1,18 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { runHighlightMonitorOnce } from '../../src/lib/highlight-engine';
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  try {
+    const result = await runHighlightMonitorOnce();
+
+    return res.status(200).json({
+      ok: true,
+      ...result,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      error: 'cron failed',
+      detail: String(err),
+    });
+  }
+}
