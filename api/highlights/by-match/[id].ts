@@ -1,53 +1,77 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { loadHighlightState } from '../../../src/lib/blob';
 
-const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY!;
+const CHANNELS = {
+  u_next_football: {
+    id: 'u_next_football',
+    label: 'U-NEXTフットボール',
+    channelUrl: 'https://www.youtube.com/@UNEXT_football',
+    priority: 2,
+  },
+  dazn_japan: {
+    id: 'dazn_japan',
+    label: 'DAZN Japan',
+    channelUrl: 'https://www.youtube.com/@DAZNJapan',
+    priority: 1,
+  },
+};
 
-function buildQuery(match: any) {
-  return `${match.homeTeam} ${match.awayTeam} highlights`;
+const LEAGUE_PLAYLISTS: Record<string, { channelId: keyof typeof CHANNELS; playlistId: string }[]> = {
+  'Premier League': [{ channelId: 'u_next_football', playlistId: 'PLoYMtUTlz8sYICoPp_j0CmyVtmv5038ai' }],
+  'La Liga': [
+    { channelId: 'dazn_japan', playlistId: 'PLEfXwIkfHxL-rwzMp33ac-l-qtPM4Svp0' },
+    { channelId: 'u_next_football', playlistId: 'PLoYMtUTlz8sZFukDCqz7G8bXMj8kZtm9a' },
+  ],
+  Bundesliga: [{ channelId: 'dazn_japan', playlistId: 'PLEfXwIkfHxL--GrJ0Pwg5-czsw20z2kWp' }],
+  'Serie A': [{ channelId: 'dazn_japan', playlistId: 'PLEfXwIkfHxL-cLEFurIQbnsBCHWdVm_RF' }],
+  'Ligue 1': [{ channelId: 'dazn_japan', playlistId: 'PLEfXwIkfHxL91ssTCB7mhXBXAqDX6ksbz' }],
+};
+
+function getAllowedSourcesForLeague(league: string) {
+  const rows = LEAGUE_PLAYLISTS[league] ?? [];
+
+  return rows.map((row) => {
+    const c = CHANNELS[row.channelId];
+
+    return {
+      sourceId: c.id,
+      sourceName: c.label,
+      channelUrl: c.channelUrl,
+      isRecommended: c.priority === 1,
+    };
+  });
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const id = String(req.query.id);
 
-    // ① match取得
     const baseUrl = `https://${req.headers.host}`;
     const matchRes = await fetch(`${baseUrl}/api/matches/${id}`);
     const match = await matchRes.json();
 
-    // ② 試合終了してなければスキップ
-    if (match.status !== 'finished') {
-      return res.status(200).json({
-        sources: [],
-        statusMessage: 'Match not finished',
-      });
+    const state = await loadHighlightState();
+    const item = state[id];
+
+    if (item?.found) {
+      const videos = Array.isArray(item.videos)
+        ? item.videos
+        : item.video
+          ? [item.video]
+          : [];
+
+      if (videos.length > 0) {
+        return res.status(200).json({ sources: videos });
+      }
     }
 
-    // ③ YouTube検索
-    const query = buildQuery(match);
-
-    const ytRes = await fetch(
-      `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(
-        query
-      )}&type=video&maxResults=3&key=${YOUTUBE_API_KEY}`
-    );
-
-    const ytData = await ytRes.json();
-
-    const videos =
-      ytData.items?.map((item: any) => ({
-        sourceId: item.id.videoId,
-        sourceName: item.snippet.channelTitle,
-        videoUrl: `https://www.youtube.com/watch?v=${item.id.videoId}`,
-        thumbnail: item.snippet.thumbnails?.medium?.url,
-      })) ?? [];
-
     return res.status(200).json({
-      sources: videos,
+      sources: getAllowedSourcesForLeague(match.league),
+      statusMessage: null,
     });
   } catch (err) {
     return res.status(500).json({
-      error: 'Failed to fetch highlights',
+      error: 'Failed to load highlights',
       detail: String(err),
     });
   }
