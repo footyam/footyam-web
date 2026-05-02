@@ -823,17 +823,30 @@ const server = http.createServer(async (req, res) => {
     return res.end();
   }
 
-  const url = new URL(req.url, `http://localhost:${PORT}`);
+  const host = req.headers.host ?? `localhost:${PORT}`;
+  const url = new URL(req.url, `http://${host}`);
+
+  console.log('REQUEST:', req.method, url.pathname);
 
   try {
-    if (url.pathname === '/api/matches/recent') {
+    if (url.pathname === '/' || url.pathname === '/api/health') {
+      return sendJson(res, 200, {
+        ok: true,
+        service: 'FootyAM API',
+      });
+    }
+
+    if (
+      req.method === 'GET' &&
+      url.pathname.startsWith('/api/matches/recent')
+    ) {
       const matches = await fetchRecentMatches();
       return sendJson(res, 200, matches);
     }
 
     if (
-      url.pathname.startsWith('/api/matches/') &&
-      req.method === 'GET'
+      req.method === 'GET' &&
+      url.pathname.startsWith('/api/matches/')
     ) {
       const matchId = url.pathname.split('/').pop();
       const match = await fetchMatch(matchId);
@@ -841,45 +854,45 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (
-      url.pathname.startsWith('/api/highlights/by-match/') &&
-      req.method === 'GET'
+      req.method === 'GET' &&
+      url.pathname.startsWith('/api/highlights/by-match/')
     ) {
       const matchId = url.pathname.split('/').pop();
       const match = await fetchMatch(matchId);
 
-      return sendJson(
-        res,
-        200,
-        getHighlightResultForMatchObject(match)
-      );
+      return sendJson(res, 200, getHighlightResultForMatchObject(match));
     }
 
     if (
-      url.pathname.startsWith('/api/highlights/refresh/') &&
-      req.method === 'GET'
+      req.method === 'GET' &&
+      url.pathname.startsWith('/api/highlights/refresh/')
     ) {
       const matchId = url.pathname.split('/').pop();
       const match = await fetchMatch(matchId);
 
-      // cache only (public safe)
-      return sendJson(
-        res,
-        200,
-        getHighlightResultForMatchObject(match)
-      );
+      return sendJson(res, 200, getHighlightResultForMatchObject(match));
     }
 
-    if (url.pathname === '/api/debug/highlight-logs') {
+    if (
+      req.method === 'GET' &&
+      url.pathname === '/api/debug/highlight-logs'
+    ) {
       return sendJson(res, 200, learningLogs);
     }
 
-    if (url.pathname === '/api/notifications') {
-  return sendJson(res, 200, {
-    notifications: getNotifications(),
-  });
-}
+    if (
+      req.method === 'GET' &&
+      url.pathname === '/api/notifications'
+    ) {
+      return sendJson(res, 200, {
+        notifications: getNotifications(),
+      });
+    }
 
-    return sendJson(res, 404, { message: 'Not found' });
+    return sendJson(res, 404, {
+      message: 'Not found',
+      path: url.pathname,
+    });
   } catch (error) {
     console.error(error);
 
