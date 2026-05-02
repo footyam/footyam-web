@@ -85,6 +85,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .map(mapMatch)
       .sort((a, b) => Date.parse(b.datetime) - Date.parse(a.datetime));
 
+    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
     return res.status(200).json(mapped);
   } catch (err) {
     return res.status(500).json({
