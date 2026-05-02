@@ -32,7 +32,6 @@ export interface HighlightSourceOption {
   sourceId: string;
   sourceName: string;
   videoUrl?: string;
-  sourceName: string;
   searchUrl: string;
   channelUrl?: string;
   isRecommended: boolean;
@@ -42,6 +41,8 @@ export interface HighlightSourceOption {
 export interface HighlightSourcesResponse {
   sources: HighlightSourceOption[];
   statusMessage?: string;
+}
+
 export interface YouTubeCandidate {
   id: string;
   title: string;

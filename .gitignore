@@ -7,3 +7,5 @@ dist
 highlight-cache.json
 matches.json
 playlist-state.json
+highlight-learning.json
+*_backup.tsx

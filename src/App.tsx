@@ -14,6 +14,10 @@ import { MatchDetailPage } from './pages/MatchDetailPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { SignInPage } from './pages/SignInPage';
 import { useNotifications } from './hooks/useNotifications';
+import { Footer } from './components/Footer';
+import { PrivacyPage } from './pages/PrivacyPage';
+import { TermsPage } from './pages/TermsPage';
+import { ContactPage } from './pages/ContactPage';
 
 export default function App() {
   const { blindMode, setBlindMode } = useBlindMode();
@@ -175,6 +179,11 @@ export default function App() {
         <Route path="/signin" element={<SignInPage />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
+
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/contact" element={<ContactPage />} />
+
       </Routes>
 
       <div className="fixed bottom-4 right-4 z-50 space-y-2">
@@ -213,6 +222,8 @@ export default function App() {
           </div>
         ))}
       </div>
+     
+     <Footer />
     </div>
   );
 }
