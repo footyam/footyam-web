@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { loadHighlightState } from '../../../src/lib/blob';
+import { loadHighlightState } from '../../../src/lib/blob.js';
 
 const CHANNELS = {
   u_next_football: {
