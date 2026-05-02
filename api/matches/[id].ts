@@ -59,7 +59,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const data = await footballRequest(`matches/${id}`);
 
-    const mapped = mapMatch(data.match);
+    const mapped = mapMatch(data);
 
     return res.status(200).json(mapped);
   } catch (err) {
