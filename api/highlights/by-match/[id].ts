@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { list } from '@vercel/blob';
+import { loadHighlightState } from '../../../src/lib/blob.js';
 
 const CHANNELS = {
   u_next_football: {
@@ -42,37 +42,29 @@ function getAllowedSourcesForLeague(league: string) {
   });
 }
 
-async function loadHighlightByMatchId(id: string) {
-  const key = `highlights/${id}.json`;
-  const blobs = await list({ prefix: key });
-
-  const blob = blobs.blobs.find((b) => b.pathname === key) ?? blobs.blobs[0];
-
-  if (!blob) return null;
-
-  const res = await fetch(blob.url);
-  return res.json();
-}
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const id = String(req.query.id);
 
-    const saved = await loadHighlightByMatchId(id);
+    // ✅ ここが本質（state読み込み）
+    const state = await loadHighlightState();
+    const saved = state[id];
 
-    if (saved?.videoUrl) {
-      return res.status(200).json({
-        sources: [
-          {
-            sourceId: 'manual',
-            sourceName: saved.title ?? 'Highlight',
-            videoUrl: saved.videoUrl,
-            isRecommended: true,
-          },
-        ],
-      });
+    if (saved?.found) {
+      const videos = Array.isArray(saved.videos)
+        ? saved.videos
+        : saved.video
+        ? [saved.video]
+        : [];
+
+      if (videos.length > 0) {
+        return res.status(200).json({
+          sources: videos,
+        });
+      }
     }
 
+    // fallback（まだ見つかってない場合）
     const baseUrl = `https://${req.headers.host}`;
     const matchRes = await fetch(`${baseUrl}/api/matches/${id}`);
     const match = await matchRes.json();
