@@ -18,7 +18,8 @@ export async function loadHighlightState() {
 // 保存（上書き）
 export async function saveHighlightState(data: any) {
   await put(BLOB_KEY, JSON.stringify(data), {
-    access: 'public',
-    addRandomSuffix: false,
-  });
+  access: 'public',
+  addRandomSuffix: false,
+  allowOverwrite: true,
+});
 }
