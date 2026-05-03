@@ -211,8 +211,15 @@ function scoreVideoAgainstMatch(title: string, match: any) {
   if (t.includes('highlights')) score += 40;
 
   if (t.includes(normalize('速報'))) score -= 25;
+  if (t.includes(normalize('緊急'))) score -= 15;
   if (t.includes(normalize('会見'))) score -= 20;
   if (t.includes(normalize('インタビュー'))) score -= 20;
+
+  if (t.includes(normalize('優勝'))) score -= 5;
+  if (t.includes(normalize('制覇'))) score -= 5;
+  if (t.includes(normalize('連覇'))) score -= 5;
+  if (t.includes(normalize('フル出場'))) score -= 8;
+  if (t.includes(normalize('出場'))) score -= 4;
 
   if (match.matchday) {
     if (
