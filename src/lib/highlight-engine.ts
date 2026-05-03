@@ -73,6 +73,7 @@ const TEAM_ALIASES: Record<string, string[]> = {
   'Liverpool FC': ['Liverpool', 'リヴァプール', 'リバプール'],
   'Chelsea FC': ['Chelsea', 'チェルシー'],
   'Arsenal FC': ['Arsenal', 'アーセナル'],
+  'Fulham FC': ['Fulham', 'フラム'],
   'FC Barcelona': ['Barcelona', 'Barça', 'Barca', 'バルセロナ', 'バルサ'],
   'Real Madrid CF': ['Real Madrid', 'レアル・マドリー', 'レアルマドリー'],
   'RCD Espanyol de Barcelona': ['Espanyol', 'エスパニョール'],
@@ -163,7 +164,7 @@ async function youtubeRequest(pathname: string, searchParams: Record<string, str
   return JSON.parse(text);
 }
 
-async function fetchRecentMatches() {
+async function fetchRecentMatches(targetLeagueCode?: string) {
   const dateFrom = new Date();
   const dateTo = new Date();
 
@@ -172,7 +173,9 @@ async function fetchRecentMatches() {
 
   let all: any[] = [];
 
-  for (const code of TOP_LEAGUES) {
+  const targetLeagues = targetLeagueCode ? [targetLeagueCode] : TOP_LEAGUES;
+
+  for (const code of targetLeagues) {
     const data = await footballRequest(`competitions/${code}/matches`, {
       dateFrom: dateFrom.toISOString().slice(0, 10),
       dateTo: dateTo.toISOString().slice(0, 10),
@@ -237,8 +240,16 @@ function buildVideoUrl(videoId: string) {
   return `https://www.youtube.com/watch?v=${videoId}`;
 }
 
-export async function runHighlightMonitorOnce() {
-  const recent = await fetchRecentMatches();
+function getVideos(existing: any) {
+  return Array.isArray(existing?.videos)
+    ? existing.videos
+    : existing?.video
+      ? [existing.video]
+      : [];
+}
+
+export async function runHighlightMonitorOnce(targetLeagueCode?: string) {
+  const recent = await fetchRecentMatches(targetLeagueCode);
   const finished = recent.filter((m) => m.status === 'finished');
 
   const state = await loadHighlightState();
@@ -246,6 +257,8 @@ export async function runHighlightMonitorOnce() {
   let matchedCount = 0;
 
   for (const [league, rows] of Object.entries(LEAGUE_PLAYLISTS)) {
+    if (targetLeagueCode && leagueMap[targetLeagueCode] !== league) continue;
+
     for (const row of rows) {
       const channel = CHANNELS[row.channelId];
       const items = await fetchPlaylistItems(row.playlistId);
@@ -261,6 +274,15 @@ export async function runHighlightMonitorOnce() {
         for (const match of finished) {
           if (match.league !== league) continue;
 
+          const matchId = String(match.id);
+          const existingVideos = getVideos(state[matchId]);
+
+          // 同じチャンネルのショートハイライトは1試合につき最大1本
+          // すでにこのチャンネルが埋まっている試合には、別動画を再割り当てしない
+          if (existingVideos.some((video: any) => video.sourceId === channel.id)) {
+            continue;
+          }
+
           const score = scoreVideoAgainstMatch(title, match);
 
           if (score > bestScore) {
@@ -273,12 +295,7 @@ export async function runHighlightMonitorOnce() {
 
         const matchId = String(best.id);
         const existing = state[matchId];
-
-        const existingVideos = Array.isArray(existing?.videos)
-          ? existing.videos
-          : existing?.video
-            ? [existing.video]
-            : [];
+        const existingVideos = getVideos(existing);
 
         const newVideo = {
           sourceId: channel.id,
@@ -316,5 +333,6 @@ export async function runHighlightMonitorOnce() {
     ok: true,
     matchedCount,
     savedMatches: Object.keys(state).length,
+    league: targetLeagueCode ?? 'ALL',
   };
 }
