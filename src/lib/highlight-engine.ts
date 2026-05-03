@@ -1,4 +1,4 @@
-import { loadHighlightState, saveHighlightState } from './blob';
+import { loadHighlightState, saveHighlightState } from './blob.js';
 
 const TOP_LEAGUES = ['PL', 'PD', 'BL1', 'SA', 'FL1'];
 
