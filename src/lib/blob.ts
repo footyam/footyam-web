@@ -6,9 +6,20 @@ export async function loadHighlightState() {
   try {
     const blobs = await list({ prefix: BLOB_KEY });
 
+    console.log(
+      'Highlight state blob candidates:',
+      blobs.blobs.map((b) => ({
+        pathname: b.pathname,
+        url: b.url,
+        size: b.size,
+        uploadedAt: b.uploadedAt,
+      }))
+    );
+
     const blob = blobs.blobs.find((b) => b.pathname === BLOB_KEY);
 
     if (!blob) {
+      console.warn('No exact highlight state blob found.');
       return {};
     }
 
@@ -19,14 +30,21 @@ export async function loadHighlightState() {
     const text = await res.text();
 
     if (!res.ok) {
-      console.error('Failed to fetch highlight state blob:', res.status, text.slice(0, 200));
+      console.error(
+        'Failed to fetch highlight state blob:',
+        res.status,
+        text.slice(0, 200)
+      );
       return {};
     }
 
     try {
       return JSON.parse(text);
     } catch {
-      console.error('Highlight state blob is not valid JSON:', text.slice(0, 200));
+      console.error(
+        'Highlight state blob is not valid JSON:',
+        text.slice(0, 200)
+      );
       return {};
     }
   } catch (err) {
