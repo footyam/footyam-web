@@ -16,15 +16,44 @@ const CHANNELS = {
   },
 };
 
-const LEAGUE_PLAYLISTS: Record<string, { channelId: keyof typeof CHANNELS; playlistId: string }[]> = {
-  'Premier League': [{ channelId: 'u_next_football', playlistId: 'PLoYMtUTlz8sYICoPp_j0CmyVtmv5038ai' }],
-  'La Liga': [
-    { channelId: 'dazn_japan', playlistId: 'PLEfXwIkfHxL-rwzMp33ac-l-qtPM4Svp0' },
-    { channelId: 'u_next_football', playlistId: 'PLoYMtUTlz8sZFukDCqz7G8bXMj8kZtm9a' },
+const LEAGUE_PLAYLISTS: Record<
+  string,
+  { channelId: keyof typeof CHANNELS; playlistId: string }[]
+> = {
+  'Premier League': [
+    {
+      channelId: 'u_next_football',
+      playlistId: 'PLoYMtUTlz8sYICoPp_j0CmyVtmv5038ai',
+    },
   ],
-  Bundesliga: [{ channelId: 'dazn_japan', playlistId: 'PLEfXwIkfHxL--GrJ0Pwg5-czsw20z2kWp' }],
-  'Serie A': [{ channelId: 'dazn_japan', playlistId: 'PLEfXwIkfHxL-cLEFurIQbnsBCHWdVm_RF' }],
-  'Ligue 1': [{ channelId: 'dazn_japan', playlistId: 'PLEfXwIkfHxL91ssTCB7mhXBXAqDX6ksbz' }],
+  'La Liga': [
+    {
+      channelId: 'dazn_japan',
+      playlistId: 'PLEfXwIkfHxL-rwzMp33ac-l-qtPM4Svp0',
+    },
+    {
+      channelId: 'u_next_football',
+      playlistId: 'PLoYMtUTlz8sZFukDCqz7G8bXMj8kZtm9a',
+    },
+  ],
+  Bundesliga: [
+    {
+      channelId: 'dazn_japan',
+      playlistId: 'PLEfXwIkfHxL--GrJ0Pwg5-czsw20z2kWp',
+    },
+  ],
+  'Serie A': [
+    {
+      channelId: 'dazn_japan',
+      playlistId: 'PLEfXwIkfHxL-cLEFurIQbnsBCHWdVm_RF',
+    },
+  ],
+  'Ligue 1': [
+    {
+      channelId: 'dazn_japan',
+      playlistId: 'PLEfXwIkfHxL91ssTCB7mhXBXAqDX6ksbz',
+    },
+  ],
 };
 
 function getAllowedSourcesForLeague(league: string) {
@@ -46,7 +75,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const id = String(req.query.id);
 
-    // ✅ ここが本質（state読み込み）
     const state = await loadHighlightState();
     const saved = state[id];
 
@@ -64,32 +92,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    // fallback（まだ見つかってない場合）
     const baseUrl = `https://${req.headers.host}`;
     const matchRes = await fetch(`${baseUrl}/api/matches/${id}`);
 
-if (!matchRes.ok) {
-  return res.status(200).json({
-    sources: [],
-    statusMessage: 'No official highlights yet.',
-  });
-}
+    if (!matchRes.ok) {
+      return res.status(200).json({
+        sources: [],
+        statusMessage: 'No official highlights yet.',
+      });
+    }
 
-const contentType = matchRes.headers.get('content-type') ?? '';
+    const contentType = matchRes.headers.get('content-type') ?? '';
 
-if (!contentType.includes('application/json')) {
-  return res.status(200).json({
-    sources: [],
-    statusMessage: 'No official highlights yet.',
-  });
-}
+    if (!contentType.includes('application/json')) {
+      return res.status(200).json({
+        sources: [],
+        statusMessage: 'No official highlights yet.',
+      });
+    }
 
-const match = await matchRes.json();
-
-return res.status(200).json({
-  sources: getAllowedSourcesForLeague(match.league),
-  statusMessage: null,
-});
+    const match = await matchRes.json();
 
     return res.status(200).json({
       sources: getAllowedSourcesForLeague(match.league),
