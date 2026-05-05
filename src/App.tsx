@@ -178,13 +178,12 @@ export default function App() {
         />
 
         <Route path="/signin" element={<SignInPage />} />
-
-        <Route path="*" element={<Navigate to="/" replace />} />
-
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/admin-secret-2026" element={<AdminPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+
 
       </Routes>
 
