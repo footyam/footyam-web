@@ -14,3 +14,5 @@ highlight-learning.json
 *.png
 vite.config.js
 vite.config.d.ts
+.vercel
+.env*.local
