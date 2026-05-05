@@ -295,6 +295,21 @@ function scoreVideoAgainstMatch(title: string, match: any) {
   const homeMatched = titleHasTeam(title, match.homeTeam);
   const awayMatched = titleHasTeam(title, match.awayTeam);
 
+  if (
+    title.includes('エヴァートン') ||
+    title.includes('チェルシー') ||
+    title.includes('ノッティンガム') ||
+    title.includes('マンチェスター')
+  ) {
+    console.log('DEBUG MATCH:', {
+      title,
+      homeTeam: match.homeTeam,
+      awayTeam: match.awayTeam,
+      homeMatched,
+      awayMatched,
+    });
+  }
+
   if (!homeMatched || !awayMatched) return 0;
 
   const t = normalize(title);
