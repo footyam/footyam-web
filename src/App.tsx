@@ -18,6 +18,7 @@ import { Footer } from './components/Footer';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { TermsPage } from './pages/TermsPage';
 import { ContactPage } from './pages/ContactPage';
+import { AdminPage } from './pages/AdminPage';
 
 export default function App() {
   const { blindMode, setBlindMode } = useBlindMode();
@@ -183,6 +184,7 @@ export default function App() {
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/admin-secret-2026" element={<AdminPage />} />
 
       </Routes>
 
