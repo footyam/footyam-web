@@ -67,7 +67,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // fallback（まだ見つかってない場合）
     const baseUrl = `https://${req.headers.host}`;
     const matchRes = await fetch(`${baseUrl}/api/matches/${id}`);
-    const match = await matchRes.json();
+
+if (!matchRes.ok) {
+  return res.status(200).json({
+    sources: [],
+    statusMessage: 'No official highlights yet.',
+  });
+}
+
+const contentType = matchRes.headers.get('content-type') ?? '';
+
+if (!contentType.includes('application/json')) {
+  return res.status(200).json({
+    sources: [],
+    statusMessage: 'No official highlights yet.',
+  });
+}
+
+const match = await matchRes.json();
+
+return res.status(200).json({
+  sources: getAllowedSourcesForLeague(match.league),
+  statusMessage: null,
+});
 
     return res.status(200).json({
       sources: getAllowedSourcesForLeague(match.league),
