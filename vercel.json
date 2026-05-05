@@ -27,15 +27,7 @@
       "destination": "/api/:path*"
     },
     {
-      "source": "/match/:path*",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/settings",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/signin",
+      "source": "/:path*",
       "destination": "/index.html"
     }
   ]
