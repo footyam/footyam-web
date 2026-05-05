@@ -301,13 +301,7 @@ function scoreVideoAgainstMatch(title: string, match: any) {
     title.includes('ノッティンガム') ||
     title.includes('マンチェスター')
   ) {
-    console.log('DEBUG MATCH:', {
-      title,
-      homeTeam: match.homeTeam,
-      awayTeam: match.awayTeam,
-      homeMatched,
-      awayMatched,
-    });
+    
   }
 
   if (!homeMatched || !awayMatched) return 0;

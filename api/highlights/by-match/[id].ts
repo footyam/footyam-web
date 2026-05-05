@@ -76,12 +76,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const id = String(req.query.id);
 
     const state = await loadHighlightState();
-    const stateKeys = Object.keys(state);
     const saved = state[id];
 
-    console.log('REQUEST ID:', id);
-    console.log('STATE KEYS:', stateKeys);
-
+    
     if (saved?.found) {
       const videos = Array.isArray(saved.videos)
         ? saved.videos
@@ -92,11 +89,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (videos.length > 0) {
         return res.status(200).json({
           sources: videos,
-          debug: {
-            requestId: id,
-            hasSaved: true,
-            stateKeys,
-          },
         });
       }
     }
@@ -108,12 +100,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({
         sources: [],
         statusMessage: 'No official highlights yet.',
-        debug: {
-          requestId: id,
-          hasSaved: false,
-          stateKeys,
-          matchStatus: matchRes.status,
-        },
+        
       });
     }
 
@@ -123,12 +110,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({
         sources: [],
         statusMessage: 'No official highlights yet.',
-        debug: {
-          requestId: id,
-          hasSaved: false,
-          stateKeys,
-          contentType,
-        },
+        
       });
     }
 
@@ -137,12 +119,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({
       sources: getAllowedSourcesForLeague(match.league),
       statusMessage: null,
-      debug: {
-        requestId: id,
-        hasSaved: false,
-        stateKeys,
-        matchLeague: match.league,
-      },
+      
     });
   } catch (err) {
     return res.status(500).json({
