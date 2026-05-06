@@ -44,6 +44,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         found: true,
         foundAt: Date.now(),
         updatedAt: Date.now(),
+        manual: true,
         videos: [
           {
             sourceId: channel.id,
@@ -51,6 +52,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             channelUrl: channel.channelUrl,
             videoUrl: String(videoUrl),
             isRecommended: channel.priority === 1,
+            manual: true,
           },
         ],
       },
@@ -61,6 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       matchId: String(matchId),
       sourceId: channel.id,
       videoUrl: String(videoUrl),
+      manual: true,
     });
   } catch (err) {
     return res.status(500).json({

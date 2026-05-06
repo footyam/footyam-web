@@ -379,6 +379,10 @@ export async function runHighlightMonitorOnce(targetLeagueCode?: string) {
 
           const matchId = String(match.id);
           const existingVideos = getVideos(state[matchId]);
+          
+          if (existingVideos.some((video: any) => video.manual)) {
+            continue;
+          }
 
           // 同じチャンネルのショートハイライトは1試合につき最大1本
           // すでにこのチャンネルが埋まっている試合には、別動画を再割り当てしない
