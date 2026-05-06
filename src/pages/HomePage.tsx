@@ -136,6 +136,11 @@ export function HomePage({
     <main className="mx-auto max-w-5xl space-y-6 px-4 py-5">
       <LeagueFilter selected={selectedLeague} onSelect={setSelectedLeague} />
 
+      <div className="px-5 pb-6 text-sm text-slate-400">
+  <p>Watch official football highlights without spoilers.</p>
+  <p>Catch up on matches your way with Blind Mode.</p>
+</div>
+
       {loading && (
         <p className="text-sm text-slate-400">Loading recent matches...</p>
       )}
