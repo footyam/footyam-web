@@ -7,6 +7,7 @@ import { ENABLE_ACCOUNT_FEATURES } from '../config/features';
 import type { HighlightSourceOption, Match } from '../types';
 import { fetchHighlightSources, fetchMatchById } from '../utils/api';
 import { formatDateTime } from '../utils/date';
+import { trackEvent } from '../utils/analytics';
 
 interface NotificationSettings {
   enabled: boolean;
@@ -382,11 +383,22 @@ export function MatchDetailPage({
                         </a>
                       </div>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => openEmbeddedVideo(source)}
-                        className="block w-full rounded-xl border border-brand-500 bg-brand-500/20 px-4 py-3 text-left text-base font-semibold text-brand-200"
-                      >
+            <button
+  type="button"
+  onClick={() => {
+    trackEvent('highlight_click', {
+      match_id: match?.id,
+      home_team: match?.homeTeam,
+      away_team: match?.awayTeam,
+      league: match?.league,
+      source: source.sourceName,
+    });
+
+    openEmbeddedVideo(source);
+  }}
+  className="block w-full rounded-xl border border-brand-500 bg-brand-500/20 px-4 py-3 text-left text-base font-semibold text-brand-200"
+>                      
+
                         <span className="inline-flex items-center gap-2">
                           <span>▶</span>
                           <span>Watch Highlights</span>
