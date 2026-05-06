@@ -4,13 +4,14 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "dev:api": "node api-server.mjs",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview",
-    "lint": "eslint .",
-    "start": "node api-server.mjs"
-  },
+  "dev": "vite",
+  "dev:api": "node api-server.mjs",
+  "build": "npm run generate:sitemap && tsc -b && vite build",
+  "generate:sitemap": "node scripts/generate-sitemap.mjs",
+  "preview": "vite preview",
+  "lint": "eslint .",
+  "start": "node api-server.mjs"
+},
   "dependencies": {
     "@supabase/supabase-js": "^2.105.2",
     "@vercel/blob": "^2.3.3",
