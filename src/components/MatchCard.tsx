@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { Match } from '../types';
 import { formatDateTime } from '../utils/date';
+import { trackEvent } from '../utils/analytics';
 
 interface MatchCardProps {
   match: Match;
@@ -39,6 +40,17 @@ export function MatchCard({ match, blindMode }: MatchCardProps) {
 
       <Link
         to={`/match/${match.id}`}
+        onClick={() => {
+          trackEvent('highlight_click', {
+            location: 'home',
+            match_id: match.id,
+            home_team: match.homeTeam,
+            away_team: match.awayTeam,
+            league: match.league,
+            source: 'match_card',
+            blind_mode: blindMode,
+          });
+        }}
         className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-brand-500"
       >
         ▶ Watch Highlights

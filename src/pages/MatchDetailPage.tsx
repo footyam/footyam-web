@@ -387,11 +387,13 @@ export function MatchDetailPage({
   type="button"
   onClick={() => {
     trackEvent('highlight_click', {
-      match_id: match?.id,
-      home_team: match?.homeTeam,
-      away_team: match?.awayTeam,
-      league: match?.league,
-      source: source.sourceName,
+      location: 'match_page',
+    match_id: match?.id,
+    home_team: match?.homeTeam,
+    away_team: match?.awayTeam,
+    league: match?.league,
+    source: source.sourceName,
+    blind_mode: blindMode,
     });
 
     openEmbeddedVideo(source);
