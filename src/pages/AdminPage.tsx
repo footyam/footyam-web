@@ -39,36 +39,42 @@ export function AdminPage() {
     }
   };
 
-  const saveManualHighlight = async () => {
-    if (!matchId.trim() || !videoUrl.trim()) {
-      setResult('Match ID and YouTube URL are required.');
+const saveManualHighlight = async () => {
+  if (!matchId.trim() || !videoUrl.trim()) {
+    setResult('Failed: Match ID and YouTube URL are required.');
+    return;
+  }
+
+  setLoading('manual');
+  setResult('');
+
+  try {
+    const res = await fetch('/api/admin/highlights/set', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        matchId: matchId.trim(),
+        videoUrl: videoUrl.trim(),
+        sourceId,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+      setResult(`Failed:\n${JSON.stringify(data, null, 2)}`);
       return;
     }
 
-    setLoading('manual');
-    setResult('');
-
-    try {
-      const res = await fetch('/api/admin/highlights/set', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          matchId: matchId.trim(),
-          videoUrl: videoUrl.trim(),
-          sourceId,
-        }),
-      });
-
-      const data = await res.json();
-      showResult(data);
-    } catch (err) {
-      setResult(String(err));
-    } finally {
-      setLoading(null);
-    }
-  };
+    setResult(`Saved!\n${JSON.stringify(data, null, 2)}`);
+  } catch (err) {
+    setResult(`Failed:\n${String(err)}`);
+  } finally {
+    setLoading(null);
+  }
+};
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10 text-slate-100">
