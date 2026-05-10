@@ -2,30 +2,64 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Match } from '../types';
 import { fetchRecentMatches } from '../utils/api';
 
+const RETRY_DELAYS_MS = [0, 2000, 5000];
+
+function wait(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
 export function useMatches() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loadingMessage, setLoadingMessage] = useState('Loading matches...');
 
   useEffect(() => {
     let cancelled = false;
-    fetchRecentMatches()
-      .then((data) => {
-        if (!cancelled) {
-          setMatches(data);
-          setError(null);
+
+    async function loadMatches() {
+      setLoading(true);
+      setError(null);
+
+      for (let attempt = 0; attempt < RETRY_DELAYS_MS.length; attempt += 1) {
+        const delay = RETRY_DELAYS_MS[attempt];
+
+        if (delay > 0) {
+          if (!cancelled) {
+            setLoadingMessage(
+              attempt === 1
+                ? 'Still waking up the server...'
+                : 'Retrying matches...'
+            );
+          }
+
+          await wait(delay);
         }
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to load matches');
+
+        try {
+          const data = await fetchRecentMatches();
+
+          if (!cancelled) {
+            setMatches(data);
+            setError(null);
+            setLoading(false);
+          }
+
+          return;
+        } catch {
+          if (!cancelled) {
+            setLoadingMessage('Still waking up the server...');
+          }
         }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      });
+      }
+
+      if (!cancelled) {
+        setError('Could not load matches. Please try again.');
+        setLoading(false);
+      }
+    }
+
+    loadMatches();
 
     return () => {
       cancelled = true;
@@ -37,5 +71,5 @@ export function useMatches() {
     [matches],
   );
 
-  return { matches, allTeams, loading, error };
+  return { matches, allTeams, loading, error, loadingMessage };
 }
