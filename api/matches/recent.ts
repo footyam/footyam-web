@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { loadMatchesCache } from '../../src/lib/blob.js';
+import { loadMatchesCache } from '../../src/lib/blob';
 
 const TOP_LEAGUES = ['PL', 'PD', 'BL1', 'SA', 'FL1'];
 
