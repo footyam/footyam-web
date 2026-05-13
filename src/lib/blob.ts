@@ -111,8 +111,7 @@ export async function saveHighlightState(data: any) {
 
 export async function loadMatchesCache() {
   if (!supabase) {
-    console.error('Supabase env vars are missing.');
-    return null;
+    throw new Error('Supabase env vars are missing.');
   }
 
   const { data, error } = await supabase
@@ -137,8 +136,7 @@ export async function loadMatchesCache() {
 
 export async function saveMatchesCache(matches: any[]) {
   if (!supabase) {
-    console.error('Supabase env vars are missing.');
-    return;
+    throw new Error('Supabase env vars are missing.');
   }
 
   const { error } = await supabase
