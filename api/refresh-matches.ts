@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { loadMatchesCache } from '../../src/lib/blob.js';
+import { saveMatchesCache } from '../src/lib/blob.js';
 
 const TOP_LEAGUES = ['PL', 'PD', 'BL1', 'SA', 'FL1'];
 
@@ -64,20 +64,38 @@ function mapMatch(item: any) {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    const cached = await loadMatchesCache();
+    const dateFrom = new Date();
+    const dateTo = new Date();
 
-    if (!cached?.matches?.length) {
-      return res.status(503).json({
-        error: 'Matches cache is empty',
+    dateFrom.setUTCDate(dateFrom.getUTCDate() - 7);
+    dateTo.setUTCDate(dateTo.getUTCDate() + 2);
+
+    let all: any[] = [];
+
+    for (const code of TOP_LEAGUES) {
+      const data = await footballRequest(`competitions/${code}/matches`, {
+        dateFrom: dateFrom.toISOString().slice(0, 10),
+        dateTo: dateTo.toISOString().slice(0, 10),
       });
+
+      all = all.concat(data.matches ?? []);
     }
 
-    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
+    const mapped = all
+      .filter((m) => allowedCodes.has(m.competition?.code))
+      .map(mapMatch)
+      .sort((a, b) => Date.parse(b.datetime) - Date.parse(a.datetime));
 
-    return res.status(200).json(cached.matches);
+    await saveMatchesCache(mapped);
+
+    return res.status(200).json({
+      ok: true,
+      count: mapped.length,
+      updatedAt: Date.now(),
+    });
   } catch (err) {
     return res.status(500).json({
-      error: 'Failed to load matches cache',
+      error: 'Failed to refresh matches',
       detail: String(err),
     });
   }

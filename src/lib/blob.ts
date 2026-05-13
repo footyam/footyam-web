@@ -108,3 +108,59 @@ export async function saveHighlightState(data: any) {
     );
   }
 }
+
+export async function loadMatchesCache() {
+  if (!supabase) {
+    console.error('Supabase env vars are missing.');
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from('match_cache')
+    .select('data, updated_at')
+    .eq('id', 'recent_matches')
+    .single();
+
+  if (error) {
+    console.error(
+      'Failed to load matches cache from Supabase:',
+      formatSupabaseError(error)
+    );
+    return null;
+  }
+
+  return {
+    matches: data?.data ?? [],
+    updatedAt: data?.updated_at ?? null,
+  };
+}
+
+export async function saveMatchesCache(matches: any[]) {
+  if (!supabase) {
+    console.error('Supabase env vars are missing.');
+    return;
+  }
+
+  const { error } = await supabase
+    .from('match_cache')
+    .upsert(
+      {
+        id: 'recent_matches',
+        data: matches,
+        updated_at: Date.now(),
+      },
+      {
+        onConflict: 'id',
+      }
+    );
+
+  if (error) {
+    const detail = formatSupabaseError(error);
+
+    console.error('Failed to save matches cache to Supabase:', detail);
+
+    throw new Error(
+      `Supabase matches cache save failed: ${error.message ?? detail}`
+    );
+  }
+}
