@@ -129,8 +129,10 @@ export function HomePage({
     .slice(0, 8);
 
   const recentMatches = ordered.filter(
-    (match) => !isInMorningWindow(match.datetime)
-  );
+  (match) =>
+    !isInMorningWindow(match.datetime) ||
+    match.status !== 'finished'
+);
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 px-4 py-5">
