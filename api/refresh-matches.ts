@@ -68,7 +68,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const dateTo = new Date();
 
     dateFrom.setUTCDate(dateFrom.getUTCDate() - 7);
-    dateTo.setUTCDate(dateTo.getUTCDate() + 2);
+    dateTo.setUTCDate(dateTo.getUTCDate() + 1);
 
     let all: any[] = [];
 
