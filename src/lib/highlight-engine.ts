@@ -353,7 +353,12 @@ function getVideos(existing: any) {
 
 export async function runHighlightMonitorOnce(targetLeagueCode?: string) {
   const recent = await fetchRecentMatches(targetLeagueCode);
-  const finished = recent.filter((m) => m.status === 'finished');
+  const monitorTargets = recent.filter((m) => {
+  const kickoff = new Date(m.datetime).getTime();
+  const threeHoursAfterKickoff = kickoff + 3 * 60 * 60 * 1000;
+
+  return m.status === 'finished' || Date.now() >= threeHoursAfterKickoff;
+});
 
   const state = await loadHighlightState();
 
@@ -374,7 +379,7 @@ export async function runHighlightMonitorOnce(targetLeagueCode?: string) {
         let best: any = null;
         let bestScore = 0;
 
-        for (const match of finished) {
+        for (const match of monitorTargets) {
           if (match.league !== league) continue;
 
           const matchId = String(match.id);
