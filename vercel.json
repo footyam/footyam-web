@@ -1,26 +1,26 @@
 {
   "crons": [
-    {
-      "path": "/api/cron-monitor?league=PL",
-      "schedule": "10 0 * * *"
-    },
-    {
-      "path": "/api/cron-monitor?league=PD",
-      "schedule": "20 0 * * *"
-    },
-    {
-      "path": "/api/cron-monitor?league=BL1",
-      "schedule": "30 0 * * *"
-    },
-    {
-      "path": "/api/cron-monitor?league=SA",
-      "schedule": "40 0 * * *"
-    },
-    {
-      "path": "/api/cron-monitor?league=FL1",
-      "schedule": "50 0 * * *"
-    }
-  ],
+  {
+    "path": "/api/cron-monitor?league=PL",
+    "schedule": "*/5 * * * *"
+  },
+  {
+    "path": "/api/cron-monitor?league=PD",
+    "schedule": "*/5 * * * *"
+  },
+  {
+    "path": "/api/cron-monitor?league=BL1",
+    "schedule": "*/5 * * * *"
+  },
+  {
+    "path": "/api/cron-monitor?league=SA",
+    "schedule": "*/5 * * * *"
+  },
+  {
+    "path": "/api/cron-monitor?league=FL1",
+    "schedule": "*/5 * * * *"
+  }
+],
   "rewrites": [
     {
       "source": "/((?!api/.*).*)",
