@@ -15,12 +15,19 @@ function formatStatus(status: string) {
 }
 
 export function MatchCard({ match, blindMode }: MatchCardProps) {
-  return (
+
+  const kickoff = new Date(match.datetime).getTime();
+
+  const effectivelyFinished =
+    match.status === 'finished' ||
+    Date.now() >= kickoff + 3 * 60 * 60 * 1000;  
+
+return (
     <article className="rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-card">
       <div className="mb-2 flex items-center justify-between text-xs text-slate-400">
         <span>{match.league}</span>
         <span className="rounded-full bg-slate-800 px-2 py-0.5 uppercase">
-          {formatStatus(match.status)}
+        {effectivelyFinished ? 'Finished' : 'Upcoming'}
         </span>
       </div>
 
