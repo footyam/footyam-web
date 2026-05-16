@@ -2,23 +2,23 @@
   "crons": [
   {
     "path": "/api/cron-monitor?league=PL",
-    "schedule": "*/5 * * * *"
+    "schedule": "0 0 * * *"
   },
   {
     "path": "/api/cron-monitor?league=PD",
-    "schedule": "*/5 * * * *"
+    "schedule": "0 0 * * *"
   },
   {
     "path": "/api/cron-monitor?league=BL1",
-    "schedule": "*/5 * * * *"
+    "schedule": "0 0 * * *"
   },
   {
     "path": "/api/cron-monitor?league=SA",
-    "schedule": "*/5 * * * *"
+    "schedule": "0 0 * * *"
   },
   {
     "path": "/api/cron-monitor?league=FL1",
-    "schedule": "*/5 * * * *"
+    "schedule": "0 0 * * *"
   }
 ],
   "rewrites": [
