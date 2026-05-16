@@ -163,7 +163,7 @@ const TEAM_ALIASES: Record<string, string[]> = {
   'Olympique Lyonnais': ['Lyon', 'Olympique Lyonnais', 'リヨン'],
   'LOSC Lille': ['Lille', 'LOSC Lille', 'リール'],
   'Stade Rennais FC 1901': ['Rennes', 'Stade Rennais', 'レンヌ'],
-  'RC Lens': ['Lens', 'RC Lens', 'ランス', 'RCランス', 'RC ランス'],
+  'Racing Club de Lens': ['Lens', 'RC Lens', 'Racing Club de Lens', 'ランス', 'RCランス', 'RC ランス'],
   'OGC Nice': ['Nice', 'OGC Nice', 'ニース'],
   'FC Nantes': ['Nantes', 'FC Nantes', 'ナント'],
   'Montpellier HSC': ['Montpellier', 'Montpellier HSC', 'モンペリエ'],
