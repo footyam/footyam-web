@@ -1,4 +1,8 @@
-import { loadHighlightState, saveHighlightState } from './blob.js';
+import {
+  loadHighlightState,
+  saveHighlightState,
+  loadMatchesCache,
+} from './blob.js';
 
 const TOP_LEAGUES = ['PL', 'PD', 'BL1', 'SA', 'FL1'];
 
@@ -444,6 +448,106 @@ export async function runHighlightMonitorOnce(targetLeagueCode?: string) {
   return {
     ok: true,
     matchedCount,
+    savedMatches: Object.keys(state).length,
+    league: targetLeagueCode ?? 'ALL',
+  };
+}
+
+export async function runPlaylistMonitorOnce(targetLeagueCode?: string) {
+  const cached = await loadMatchesCache();
+  const recent = cached?.matches ?? [];
+
+  const monitorTargets = recent.filter((m: any) => {
+    const kickoff = new Date(m.datetime).getTime();
+    const threeHoursAfterKickoff = kickoff + 3 * 60 * 60 * 1000;
+
+    return m.status === 'finished' || Date.now() >= threeHoursAfterKickoff;
+  });
+
+  const state = await loadHighlightState();
+
+  let matchedCount = 0;
+
+  for (const [league, rows] of Object.entries(LEAGUE_PLAYLISTS)) {
+    if (targetLeagueCode && leagueMap[targetLeagueCode] !== league) continue;
+
+    for (const row of rows) {
+      const channel = CHANNELS[row.channelId];
+      const items = await fetchPlaylistItems(row.playlistId);
+
+      for (const item of items) {
+        const title = item?.snippet?.title ?? '';
+        const videoId = item?.contentDetails?.videoId;
+        if (!videoId) continue;
+
+        let best: any = null;
+        let bestScore = 0;
+
+        for (const match of monitorTargets) {
+          if (match.league !== league) continue;
+
+          const matchId = String(match.id);
+          const existingVideos = getVideos(state[matchId]);
+
+          if (existingVideos.some((video: any) => video.manual)) {
+            continue;
+          }
+
+          if (existingVideos.some((video: any) => video.sourceId === channel.id)) {
+            continue;
+          }
+
+          const score = scoreVideoAgainstMatch(title, match);
+
+          if (score > bestScore) {
+            best = match;
+            bestScore = score;
+          }
+        }
+
+        if (!best || bestScore < 50) continue;
+
+        const matchId = String(best.id);
+        const existing = state[matchId];
+        const existingVideos = getVideos(existing);
+
+        const newVideo = {
+          sourceId: channel.id,
+          sourceName: channel.label,
+          channelUrl: channel.channelUrl,
+          videoUrl: buildVideoUrl(videoId),
+          isRecommended: channel.priority === 1,
+        };
+
+        const videos = [
+          ...existingVideos.filter((video: any) => video.sourceId !== newVideo.sourceId),
+          newVideo,
+        ].sort((a, b) => {
+          if (Number(b.isRecommended) !== Number(a.isRecommended)) {
+            return Number(b.isRecommended) - Number(a.isRecommended);
+          }
+          return a.sourceName.localeCompare(b.sourceName);
+        });
+
+        state[matchId] = {
+          found: true,
+          foundAt: existing?.foundAt ?? Date.now(),
+          updatedAt: Date.now(),
+          videos,
+        };
+
+        matchedCount += 1;
+      }
+    }
+  }
+
+  await saveHighlightState(state);
+
+  return {
+    ok: true,
+    mode: 'playlist-only',
+    matchedCount,
+    targetMatches: monitorTargets.length,
     savedMatches: Object.keys(state).length,
     league: targetLeagueCode ?? 'ALL',
   };

@@ -8,11 +8,7 @@ interface MatchCardProps {
   blindMode: boolean;
 }
 
-function formatStatus(status: string) {
-  if (status === 'finished') return 'Finished';
-  if (status === 'upcoming') return 'Upcoming';
-  return status;
-}
+
 
 export function MatchCard({ match, blindMode }: MatchCardProps) {
 
