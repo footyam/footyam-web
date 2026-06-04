@@ -74,9 +74,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     for (const code of TOP_LEAGUES) {
       const data = await footballRequest(`competitions/${code}/matches`, {
-        dateFrom: dateFrom.toISOString().slice(0, 10),
-        dateTo: dateTo.toISOString().slice(0, 10),
-      });
+  season: '2025',
+  dateFrom: dateFrom.toISOString().slice(0, 10),
+  dateTo: dateTo.toISOString().slice(0, 10),
+});
 
       all = all.concat(data.matches ?? []);
     }
