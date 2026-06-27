@@ -672,13 +672,16 @@ export async function runChannelMonitorOnce(targetLeagueCode?: string) {
 
   await saveHighlightState(state);
 
-  return {
-    ok: true,
-    mode: 'channel-uploads',
-    matchedCount,
-    checkedVideos,
-    targetMatches: monitorTargets.length,
-    savedMatches: Object.keys(state).length,
-    league: targetLeagueCode ?? 'ALL',
-  };
+ return {
+  ok: true,
+  mode: 'channel-uploads',
+  matchedCount,
+  checkedVideos,
+  targetMatches: monitorTargets.length,
+  savedMatches: Object.keys(state).length,
+  league: targetLeagueCode ?? 'ALL',
+  debug: {
+    note: 'temporary debug',
+  },
+};
 }
