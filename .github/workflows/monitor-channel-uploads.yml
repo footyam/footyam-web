@@ -1,0 +1,13 @@
+name: Monitor channel uploads
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  monitor-channel-uploads:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Monitor channel uploads
+        run: curl -fsS "https://footyam-v1.vercel.app/api/cron-channel-monitor"

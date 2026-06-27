@@ -19,12 +19,16 @@ const CHANNELS = {
     id: 'u_next_football',
     label: 'U-NEXTフットボール',
     channelUrl: 'https://www.youtube.com/@UNEXT_football',
+    youtubeChannelId: 'UCMjvvElkdLRTgcTKklAUkSw',
+    uploadsPlaylistId: 'UUMjvvElkdLRTgcTKklAUkSw',
     priority: 2,
   },
   dazn_japan: {
     id: 'dazn_japan',
     label: 'DAZN Japan',
     channelUrl: 'https://www.youtube.com/@DAZNJapan',
+    youtubeChannelId: 'UCoFLB_Gw_AoxUuuzKjXrc_Q',
+    uploadsPlaylistId: 'UUoFLB_Gw_AoxUuuzKjXrc_Q',
     priority: 1,
   },
 };
@@ -295,6 +299,18 @@ async function fetchPlaylistItems(playlistId: string) {
   return data.items ?? [];
 }
 
+async function fetchChannelUploads(channelId: keyof typeof CHANNELS) {
+  const channel = CHANNELS[channelId];
+
+  const data = await youtubeRequest('playlistItems', {
+    part: 'snippet,contentDetails',
+    playlistId: channel.uploadsPlaylistId,
+    maxResults: '25',
+  });
+
+  return data.items ?? [];
+}
+
 function scoreVideoAgainstMatch(title: string, match: any) {
   const homeMatched = titleHasTeam(title, match.homeTeam);
   const awayMatched = titleHasTeam(title, match.awayTeam);
@@ -549,6 +565,111 @@ export async function runPlaylistMonitorOnce(targetLeagueCode?: string) {
     ok: true,
     mode: 'playlist-only',
     matchedCount,
+    targetMatches: monitorTargets.length,
+    savedMatches: Object.keys(state).length,
+    league: targetLeagueCode ?? 'ALL',
+  };
+}
+
+export async function runChannelMonitorOnce(targetLeagueCode?: string) {
+  const cached = await loadMatchesCache();
+  const recent = cached?.matches ?? [];
+  const now = Date.now();
+
+  const monitorTargets = recent.filter((m: any) => {
+    const kickoff = new Date(m.datetime).getTime();
+    const estimatedFinishedAt = kickoff + 2 * 60 * 60 * 1000;
+    const within7Days = now - kickoff <= 7 * 24 * 60 * 60 * 1000;
+
+    return within7Days && (m.status === 'finished' || now >= estimatedFinishedAt);
+  });
+
+  const state = await loadHighlightState();
+
+  let matchedCount = 0;
+  let checkedVideos = 0;
+
+  const channelIds = Array.from(
+    new Set(
+      Object.values(LEAGUE_PLAYLISTS)
+        .flat()
+        .map((row) => row.channelId)
+    )
+  );
+
+  for (const channelId of channelIds) {
+    const channel = CHANNELS[channelId];
+    const items = await fetchChannelUploads(channelId);
+
+    for (const item of items) {
+      const title = item?.snippet?.title ?? '';
+      const videoId = item?.contentDetails?.videoId;
+      if (!videoId) continue;
+
+      checkedVideos += 1;
+
+      let best: any = null;
+      let bestScore = 0;
+
+      for (const match of monitorTargets) {
+        if (targetLeagueCode && leagueMap[targetLeagueCode] !== match.league) continue;
+
+        const matchId = String(match.id);
+        const existingVideos = getVideos(state[matchId]);
+
+        if (existingVideos.some((video: any) => video.manual)) continue;
+        if (existingVideos.some((video: any) => video.sourceId === channel.id)) continue;
+
+        const score = scoreVideoAgainstMatch(title, match);
+
+        if (score > bestScore) {
+          best = match;
+          bestScore = score;
+        }
+      }
+
+      if (!best || bestScore < 50) continue;
+
+      const matchId = String(best.id);
+      const existing = state[matchId];
+      const existingVideos = getVideos(existing);
+
+      const newVideo = {
+        sourceId: channel.id,
+        sourceName: channel.label,
+        channelUrl: channel.channelUrl,
+        videoUrl: buildVideoUrl(videoId),
+        isRecommended: channel.priority === 1,
+      };
+
+      const videos = [
+        ...existingVideos.filter((video: any) => video.sourceId !== newVideo.sourceId),
+        newVideo,
+      ].sort((a, b) => {
+        if (Number(b.isRecommended) !== Number(a.isRecommended)) {
+          return Number(b.isRecommended) - Number(a.isRecommended);
+        }
+        return a.sourceName.localeCompare(b.sourceName);
+      });
+
+      state[matchId] = {
+        found: true,
+        foundAt: existing?.foundAt ?? Date.now(),
+        updatedAt: Date.now(),
+        videos,
+      };
+
+      matchedCount += 1;
+    }
+  }
+
+  await saveHighlightState(state);
+
+  return {
+    ok: true,
+    mode: 'channel-uploads',
+    matchedCount,
+    checkedVideos,
     targetMatches: monitorTargets.length,
     savedMatches: Object.keys(state).length,
     league: targetLeagueCode ?? 'ALL',
