@@ -71,16 +71,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     dateTo.setTime(dateTo.getTime() + 36 * 60 * 60 * 1000);
 
     let all: any[] = [];
+const debug: Record<string, number> = {};
 
-    for (const code of TOP_LEAGUES) {
-      const data = await footballRequest(`competitions/${code}/matches`, {
-  season: '2025',
-  dateFrom: dateFrom.toISOString().slice(0, 10),
-  dateTo: dateTo.toISOString().slice(0, 10),
-});
+for (const code of TOP_LEAGUES) {
+  const data = await footballRequest(`competitions/${code}/matches`, {
+    season: '2025',
+    dateFrom: dateFrom.toISOString().slice(0, 10),
+    dateTo: dateTo.toISOString().slice(0, 10),
+  });
 
-      all = all.concat(data.matches ?? []);
-    }
+  debug[code] = data.matches?.length ?? 0;
+  all = all.concat(data.matches ?? []);
+}
 
     const mapped = all
       .filter((m) => allowedCodes.has(m.competition?.code))
@@ -90,10 +92,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await saveMatchesCache(mapped);
 
     return res.status(200).json({
-      ok: true,
-      count: mapped.length,
-      updatedAt: Date.now(),
-    });
+  ok: true,
+  count: mapped.length,
+  debug,
+  dateFrom: dateFrom.toISOString().slice(0, 10),
+  dateTo: dateTo.toISOString().slice(0, 10),
+  updatedAt: Date.now(),
+});
   } catch (err) {
     return res.status(500).json({
       error: 'Failed to refresh matches',
