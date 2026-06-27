@@ -473,8 +473,7 @@ export async function runHighlightMonitorOnce(targetLeagueCode?: string) {
 
 export async function runPlaylistMonitorOnce(targetLeagueCode?: string) {
   const cached = await loadMatchesCache();
-  const recent = cached?.matches ?? [];
-
+  const recent = Array.isArray(cached) ? cached : cached?.matches ?? [];
   const monitorTargets = recent.filter((m: any) => {
     const kickoff = new Date(m.datetime).getTime();
     const threeHoursAfterKickoff = kickoff + 3 * 60 * 60 * 1000;
@@ -573,7 +572,7 @@ export async function runPlaylistMonitorOnce(targetLeagueCode?: string) {
 
 export async function runChannelMonitorOnce(targetLeagueCode?: string) {
   const cached = await loadMatchesCache();
-  const recent = cached?.matches ?? [];
+  const recent = Array.isArray(cached) ? cached : cached?.matches ?? [];
   const now = Date.now();
 
   const monitorTargets = recent.filter((m: any) => {
