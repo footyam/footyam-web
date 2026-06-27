@@ -325,11 +325,13 @@ function scoreVideoAgainstMatch(title: string, match: any) {
   if (t.includes(normalize('会見'))) score -= 20;
   if (t.includes(normalize('インタビュー'))) score -= 20;
 
-  if (t.includes(normalize('優勝'))) score -= 5;
   if (t.includes(normalize('制覇'))) score -= 5;
   if (t.includes(normalize('連覇'))) score -= 5;
-  if (t.includes(normalize('フル出場'))) score -= 8;
-  if (t.includes(normalize('出場'))) score -= 4;
+  if (t.includes(normalize('シャーレアップ'))) score -= 35;
+  if (t.includes(normalize('ビールかけ'))) score -= 35;
+  if (t.includes(normalize('セレモニー'))) score -= 25;
+  if (t.includes(normalize('表彰'))) score -= 20;
+  if (t.includes(normalize('裏側'))) score -= 25;
 
   if (match.matchday) {
     if (
