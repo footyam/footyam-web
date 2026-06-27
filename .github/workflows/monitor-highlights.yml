@@ -1,4 +1,4 @@
-name: Monitor PL highlights
+name: Monitor highlights
 
 on:
   schedule:
@@ -6,8 +6,20 @@ on:
   workflow_dispatch:
 
 jobs:
-  monitor-pl:
+  monitor-highlights:
     runs-on: ubuntu-latest
     steps:
       - name: Monitor PL
         run: curl -fsS "https://footyam-v1.vercel.app/api/cron-monitor?league=PL"
+
+      - name: Monitor La Liga
+        run: curl -fsS "https://footyam-v1.vercel.app/api/cron-monitor?league=PD"
+
+      - name: Monitor Bundesliga
+        run: curl -fsS "https://footyam-v1.vercel.app/api/cron-monitor?league=BL1"
+
+      - name: Monitor Serie A
+        run: curl -fsS "https://footyam-v1.vercel.app/api/cron-monitor?league=SA"
+
+      - name: Monitor Ligue 1
+        run: curl -fsS "https://footyam-v1.vercel.app/api/cron-monitor?league=FL1"
