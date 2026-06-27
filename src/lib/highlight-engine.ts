@@ -599,6 +599,14 @@ export async function runChannelMonitorOnce(targetLeagueCode?: string) {
   for (const channelId of channelIds) {
     const channel = CHANNELS[channelId];
     const items = await fetchChannelUploads(channelId);
+    console.log(
+  '[channel uploads]',
+  channel.id,
+  items.slice(0, 10).map((item: any) => ({
+    title: item?.snippet?.title,
+    videoId: item?.contentDetails?.videoId,
+  }))
+);
 
     for (const item of items) {
       const title = item?.snippet?.title ?? '';
