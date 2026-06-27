@@ -588,7 +588,6 @@ export async function runChannelMonitorOnce(targetLeagueCode?: string) {
   let matchedCount = 0;
   let checkedVideos = 0;
 
-  const debugVideos: any[] = [];
 
   const channelIds = Array.from(
     new Set(
@@ -610,10 +609,6 @@ export async function runChannelMonitorOnce(targetLeagueCode?: string) {
   }))
 );
 
-    debugVideos.push({
-      channel: channel.id,
-      titles: items.slice(0, 10).map((item: any) => item?.snippet?.title),
-    });
 
     for (const item of items) {
       const title = item?.snippet?.title ?? '';
@@ -687,9 +682,5 @@ export async function runChannelMonitorOnce(targetLeagueCode?: string) {
   targetMatches: monitorTargets.length,
   savedMatches: Object.keys(state).length,
   league: targetLeagueCode ?? 'ALL',
-  debug: {
-    note: 'temporary debug',
-    videos: debugVideos,
-  },
 };
 }
