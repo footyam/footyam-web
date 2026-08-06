@@ -10,4 +10,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Monitor channel uploads
-        run: curl -fsS "https://footyam-v1.vercel.app/api/cron-channel-monitor"
+        run: curl -fsS "https://footyam.vercel.app/api/cron-channel-monitor"
