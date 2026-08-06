@@ -578,9 +578,9 @@ export async function runChannelMonitorOnce(targetLeagueCode?: string) {
   const monitorTargets = recent.filter((m: any) => {
     const kickoff = new Date(m.datetime).getTime();
     const estimatedFinishedAt = kickoff + 2 * 60 * 60 * 1000;
-    const within60Days = now - kickoff <= 60 * 24 * 60 * 60 * 1000;
+    const within7Days = now - kickoff <= 7 * 24 * 60 * 60 * 1000;
 
-    return within60Days && (m.status === 'finished' || now >= estimatedFinishedAt);
+    return within7Days && (m.status === 'finished' || now >= estimatedFinishedAt);
   });
 
   const state = await loadHighlightState();
