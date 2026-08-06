@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://footyam-v1.vercel.app/sitemap.xml
+Sitemap: https://footyam.vercel.app/sitemap.xml
