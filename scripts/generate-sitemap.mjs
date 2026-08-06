@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-const SITE_URL = 'https://footyam-v1.vercel.app';
+const SITE_URL = 'https://footyam.vercel.app';
 
 const publicDir = path.resolve('public');
 const sitemapPath = path.resolve('public/sitemap.xml');
