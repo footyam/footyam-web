@@ -75,7 +75,7 @@ const debug: Record<string, number> = {};
 
 for (const code of TOP_LEAGUES) {
   const data = await footballRequest(`competitions/${code}/matches`, {
-    season: '2025',
+    season: '2026',
     dateFrom: dateFrom.toISOString().slice(0, 10),
     dateTo: dateTo.toISOString().slice(0, 10),
   });
