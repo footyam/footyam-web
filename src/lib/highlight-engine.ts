@@ -95,7 +95,10 @@ const TEAM_ALIASES: Record<string, string[]> = {
   'Tottenham Hotspur FC': ['Tottenham', 'Tottenham Hotspur', 'Spurs', 'スパーズ', 'トッテナム・ホットスパー', 'トッテナム'],
   'West Ham United FC': ['West Ham', 'West Ham United', 'ウェストハム', 'ウエストハム'],
   'Wolverhampton Wanderers FC': ['Wolverhampton', 'Wolves', 'Wolverhampton Wanderers', 'ウルヴス', 'ウルブス', 'ウォルヴァーハンプトン'],
-
+  'Coventry City FC': ['Coventry City', 'Coventry', 'コヴェントリー・シティ', 'コヴェントリーシティ', 'コヴェントリー'],
+  'Ipswich Town FC': ['Ipswich Town', 'Ipswich', 'イプスウィッチ・タウン', 'イプスウィッチタウン', 'イプスウィッチ'],
+  'Hull City AFC': ['Hull City', 'Hull', 'ハル・シティ', 'ハルシティ', 'ハル'],
+  
   // La Liga
   'Athletic Club': ['Athletic Club', 'Athletic Bilbao', 'Bilbao', 'アスレティック・クルブ', 'アスレティック・ビルバオ', 'ビルバオ'],
   'Club Atlético de Madrid': ['Atlético de Madrid', 'Atletico Madrid', 'Atlético', 'Atletico', 'アトレティコ・マドリー', 'アトレティコ・デ・マドリー', 'アトレティコ・マドリード', 'アトレティコマドリード', 'アトレティコ'],
@@ -117,6 +120,9 @@ const TEAM_ALIASES: Record<string, string[]> = {
   'Sevilla FC': ['Sevilla', 'Sevilla FC', 'セビージャ'],
   'Valencia CF': ['Valencia', 'Valencia CF', 'バレンシア'],
   'Villarreal CF': ['Villarreal', 'Villarreal CF', 'ビジャレアル'],
+  'Real Racing Club de Santander': ['Racing Santander', 'Real Racing Club', 'Racing', 'ラシン・サンタンデール', 'ラシンサンタンデール', 'ラシン'],
+  'RC Deportivo La Coruña': ['Deportivo La Coruña', 'Deportivo de La Coruña', 'Deportivo', 'RC Deportivo', 'デポルティーボ・ラ・コルーニャ', 'デポルティーボ・ラコルーニャ', 'デポルティーボ', 'ラ・コルーニャ'],
+  'Málaga CF': ['Málaga', 'Malaga', 'Málaga CF', 'Malaga CF', 'マラガ', 'マラガCF'],
 
   // Bundesliga
   'FC Bayern München': ['FC Bayern München', 'Bayern Munich', 'Bayern', 'バイエルン', 'バイエルン・ミュンヘン'],
@@ -137,6 +143,9 @@ const TEAM_ALIASES: Record<string, string[]> = {
   '1. FC Heidenheim 1846': ['Heidenheim', '1. FC Heidenheim', 'ハイデンハイム'],
   '1. FC Köln': ['Köln', 'Koln', '1. FC Köln', '1. FC Koln', 'Cologne', 'ケルン'],
   'Hamburger SV': ['Hamburger SV', 'HSV', 'Hamburg', 'ハンブルガーSV', 'ハンブルク'],
+  'FC Schalke 04': ['FC Schalke 04', 'Schalke 04', 'Schalke', 'シャルケ04', 'シャルケ'],
+  'SV Elversberg': ['SV Elversberg', 'Elversberg', 'エルヴェルスベルク', 'エルフェアスベルク', 'エルヴァースベルク'],
+  'SC Paderborn 07': ['SC Paderborn 07', 'Paderborn', 'パーダーボルン', 'パーダーボルン07'],
 
   // Serie A
   'Juventus FC': ['Juventus', 'Juventus FC', 'ユヴェントス'],
@@ -159,6 +168,9 @@ const TEAM_ALIASES: Record<string, string[]> = {
   'Como 1907': ['Como', 'Como 1907', 'コモ'],
   'US Cremonese': ['Cremonese', 'US Cremonese', 'クレモネーゼ'],
   'AC Pisa 1909': ['Pisa', 'AC Pisa', 'ピサ'],
+  'Venezia FC': ['Venezia', 'Venezia FC', 'ヴェネツィア', 'ベネチア', 'ヴェネチア'],
+  'Frosinone Calcio': ['Frosinone', 'Frosinone Calcio', 'フロジノーネ'],
+  'AC Monza': ['Monza', 'AC Monza', 'モンツァ', 'モンザ'],
 
   // Ligue 1
   'Paris Saint-Germain FC': ['Paris Saint-Germain', 'PSG', 'Paris SG', 'パリ・サンジェルマン', 'パリSG'],
@@ -180,6 +192,8 @@ const TEAM_ALIASES: Record<string, string[]> = {
   'FC Lorient': ['Lorient', 'FC Lorient', 'ロリアン'],
   'Angers SCO': ['Angers', 'Angers SCO', 'アンジェ'],
   'Paris FC': ['Paris FC', 'パリFC'],
+  'ESTAC Troyes': ['ESTAC Troyes', 'Troyes', 'ESTAC', 'トロワ', 'ESTACトロワ'],
+  'Le Mans FC': ['Le Mans', 'Le Mans FC', 'ル・マン', 'ルマン'],
 };
 
 function normalize(text: string) {
