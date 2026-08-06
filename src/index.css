@@ -11,7 +11,15 @@
   scrollbar-color: #334155 #0f172a;
 }
 
+html,
 body {
   margin: 0;
   min-width: 320px;
+  min-height: 100%;
+  background-color: #030616;
+  overscroll-behavior-y: none;
+}
+
+body {
+  min-height: 100dvh;
 }
