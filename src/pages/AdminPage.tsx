@@ -1,12 +1,5 @@
 import { useState } from 'react';
 
-const LEAGUES = [
-  { code: 'PL', label: 'Premier League' },
-  { code: 'PD', label: 'La Liga' },
-  { code: 'BL1', label: 'Bundesliga' },
-  { code: 'SA', label: 'Serie A' },
-  { code: 'FL1', label: 'Ligue 1' },
-];
 
 const SOURCES = [
   { id: 'u_next_football', label: 'U-NEXTフットボール' },
@@ -25,20 +18,6 @@ export function AdminPage() {
     setResult(JSON.stringify(data, null, 2));
   };
 
-  const refreshLeague = async (league: string) => {
-    setLoading(`league-${league}`);
-    setResult('');
-
-    try {
-      const res = await fetch(`/api/cron-monitor?league=${league}`);
-      const data = await res.json();
-      showResult(data);
-    } catch (err) {
-      setResult(String(err));
-    } finally {
-      setLoading(null);
-    }
-  };
 
 const saveManualHighlight = async () => {
   if (!matchId.trim() || !videoUrl.trim()) {
@@ -98,26 +77,6 @@ const saveManualHighlight = async () => {
     className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-brand-500"
   />
 </div>
-
-      <section className="mt-8 rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-        <h2 className="text-lg font-semibold">Refresh by league</h2>
-
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {LEAGUES.map((league) => (
-            <button
-              key={league.code}
-              type="button"
-              onClick={() => refreshLeague(league.code)}
-              disabled={loading !== null}
-              className="rounded-xl border border-brand-500/40 bg-brand-500/10 px-4 py-3 text-left font-semibold text-brand-400 hover:bg-brand-500/20 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {loading === `league-${league.code}`
-                ? 'Refreshing...'
-                : `Refresh ${league.label}`}
-            </button>
-          ))}
-        </div>
-      </section>
 
       <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
         <h2 className="text-lg font-semibold">Manual override</h2>
