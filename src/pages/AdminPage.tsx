@@ -14,6 +14,7 @@ const SOURCES = [
 ];
 
 export function AdminPage() {
+  const [adminSecret, setAdminSecret] = useState('');
   const [matchId, setMatchId] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
   const [sourceId, setSourceId] = useState('u_next_football');
@@ -45,6 +46,11 @@ const saveManualHighlight = async () => {
     return;
   }
 
+  if (!matchId.trim() || !videoUrl.trim()) {
+    setResult('Failed: Match ID and YouTube URL are required.');
+    return;
+  }
+
   setLoading('manual');
   setResult('');
 
@@ -53,6 +59,7 @@ const saveManualHighlight = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-admin-secret': adminSecret,
       },
       body: JSON.stringify({
         matchId: matchId.trim(),
@@ -82,6 +89,15 @@ const saveManualHighlight = async () => {
       <p className="mt-2 text-sm text-slate-400">
         Manually refresh and override official highlight sources.
       </p>
+      <div className="mt-6">
+  <input
+    type="password"
+    value={adminSecret}
+    onChange={(e) => setAdminSecret(e.target.value)}
+    placeholder="Admin secret"
+    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-brand-500"
+  />
+</div>
 
       <section className="mt-8 rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
         <h2 className="text-lg font-semibold">Refresh by league</h2>
