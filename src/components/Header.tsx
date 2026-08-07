@@ -13,9 +13,13 @@ export function Header({ blindMode, setBlindMode, selectedTeam, onSelectTeam }: 
   return (
     <header className="sticky top-0 z-10 border-b border-slate-800 bg-slate-950/95 backdrop-blur">
       <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
-        <Link to="/" className="shrink-0 text-lg font-bold tracking-wide text-white">
-          Footy<span className="text-brand-500">AM</span>
-        </Link>
+        <Link
+  to="/"
+  onClick={() => onSelectTeam(null)}
+  className="shrink-0 text-lg font-bold tracking-wide text-white"
+>
+  Footy<span className="text-brand-500">AM</span>
+</Link>
 
         <TeamSearchBox selectedTeam={selectedTeam} onSelectTeam={onSelectTeam} />
 
