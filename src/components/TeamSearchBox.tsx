@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { TEAM_SEARCH_ALIASES } from '../data/teamSearchAliases';
 
 interface TeamSearchBoxProps {
@@ -17,6 +18,7 @@ function normalizeSearchText(text: string): string {
 
 export function TeamSearchBox({ selectedTeam, onSelectTeam }: TeamSearchBoxProps) {
   const [query, setQuery] = useState('');
+  const navigate = useNavigate();
 
   const suggestions = useMemo(() => {
     const q = normalizeSearchText(query);
@@ -101,6 +103,7 @@ export function TeamSearchBox({ selectedTeam, onSelectTeam }: TeamSearchBoxProps
               onClick={() => {
                 onSelectTeam(suggestion.teamName);
                 setQuery('');
+                navigate('/');
               }}
               className="block w-full px-4 py-2 text-left text-sm text-slate-200 transition hover:bg-slate-800"
             >
