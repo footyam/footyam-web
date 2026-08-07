@@ -21,7 +21,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'POST') {
       return res.status(405).json({ error: 'method not allowed' });
     }
+    const adminSecret = process.env.ADMIN_SECRET;
+    const providedSecret = req.headers['gofootyamadmin5090'];
 
+    if (!adminSecret) {
+      return res.status(500).json({ error: 'ADMIN_SECRET is not configured' });
+    }
+
+    if (providedSecret !== adminSecret) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
     const { matchId, videoUrl, sourceId } = req.body ?? {};
 
     if (!matchId || !videoUrl || !sourceId) {
