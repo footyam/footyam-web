@@ -14,16 +14,11 @@ export function AdminPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const [result, setResult] = useState('');
 
-  const showResult = (data: unknown) => {
-    setResult(JSON.stringify(data, null, 2));
-  };
-
-
 const saveManualHighlight = async () => {
-  if (!matchId.trim() || !videoUrl.trim()) {
-    setResult('Failed: Match ID and YouTube URL are required.');
-    return;
-  }
+  if (!adminSecret.trim()) {
+  setResult('Failed: Admin secret is required.');
+  return;
+}
 
   if (!matchId.trim() || !videoUrl.trim()) {
     setResult('Failed: Match ID and YouTube URL are required.');
@@ -115,7 +110,7 @@ const saveManualHighlight = async () => {
           <button
             type="button"
             onClick={saveManualHighlight}
-            disabled={loading !== null}
+            disabled={loading !== null || !adminSecret.trim()}
             className="rounded-xl bg-brand-500 px-5 py-3 font-semibold text-slate-950 hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading === 'manual' ? 'Saving...' : 'Save manual highlight'}
