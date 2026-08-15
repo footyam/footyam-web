@@ -48,8 +48,12 @@ function matchesLeagueFilter(matchLeague: string, selectedLeague: string): boole
 }
 
 function byRecent(matches: Match[]) {
+  const now = Date.now();
+
   return [...matches].sort(
-    (a, b) => +new Date(b.datetime) - +new Date(a.datetime)
+    (a, b) =>
+      Math.abs(+new Date(a.datetime) - now) -
+      Math.abs(+new Date(b.datetime) - now)
   );
 }
 
@@ -128,11 +132,13 @@ export function HomePage({
     )
     .slice(0, 8);
 
-  const recentMatches = ordered.filter(
-  (match) =>
-    !isInMorningWindow(match.datetime) ||
-    match.status !== 'finished'
-);
+  const recentMatches = selectedTeam
+  ? ordered
+  : ordered.filter(
+      (match) =>
+        match.status !== 'finished' &&
+        +new Date(match.datetime) >= Date.now() - 3 * 60 * 60 * 1000
+    );
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 px-4 py-5">
