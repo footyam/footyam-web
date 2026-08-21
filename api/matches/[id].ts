@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { loadMatchesCache } from '../../src/lib/blob.js';
 
 const leagueMap: Record<string, string> = {
   PL: 'Premier League',
@@ -53,12 +54,29 @@ function mapMatch(item: any) {
   };
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse,
+) {
   try {
     const id = String(req.query.id);
 
-    const data = await footballRequest(`matches/${id}`);
+    const cached = await loadMatchesCache();
 
+    const cachedMatch = cached?.matches?.find(
+      (match: any) => String(match?.id) === id,
+    );
+
+    if (cachedMatch) {
+      res.setHeader(
+        'Cache-Control',
+        's-maxage=60, stale-while-revalidate=300',
+      );
+
+      return res.status(200).json(cachedMatch);
+    }
+
+    const data = await footballRequest(`matches/${id}`);
     const mapped = mapMatch(data);
 
     return res.status(200).json(mapped);
