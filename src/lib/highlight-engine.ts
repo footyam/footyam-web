@@ -341,7 +341,7 @@ function scoreVideoAgainstMatch(title: string, match: any) {
   if (!homeMatched || !awayMatched) return 0;
 
   const t = normalize(title);
-
+if (!t.includes(normalize('ハイライト'))) return 0;
   let score = 50;
 
   if (t.includes(normalize('ショートハイライト'))) score += 55;
