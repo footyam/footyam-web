@@ -132,13 +132,25 @@ export function HomePage({
     )
     .slice(0, 8);
 
-  const recentMatches = selectedTeam
-  ? ordered
-  : ordered.filter(
-      (match) =>
-        match.status !== 'finished' &&
-        +new Date(match.datetime) >= Date.now() - 3 * 60 * 60 * 1000
-    );
+  const upcomingMatches = ordered.filter(
+  (match) =>
+    match.status !== 'finished' &&
+    +new Date(match.datetime) >= Date.now()
+);
+
+  const threeDaysAgo = Date.now() - 3 * 24 * 60 * 60 * 1000;
+
+const pastMatches = ordered
+  .filter(
+    (match) =>
+      match.status === 'finished' &&
+      +new Date(match.datetime) >= threeDaysAgo &&
+      +new Date(match.datetime) < Date.now()
+  )
+  .sort(
+    (a, b) =>
+      +new Date(b.datetime) - +new Date(a.datetime)
+  );
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 px-4 py-5">
@@ -213,19 +225,40 @@ export function HomePage({
 
       <section>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-300">
-          Recent Matches
-        </h2>
+  Upcoming
+</h2>
 
-        <div className="grid gap-3">
-          {recentMatches.map((match) => (
-            <MatchCard
-              key={match.id}
-              match={match}
-              blindMode={blindMode}
-            />
-          ))}
-        </div>
+<div className="grid gap-3">
+  {upcomingMatches.map((match) => (
+    <MatchCard
+      key={match.id}
+      match={match}
+      blindMode={blindMode}
+    />
+  ))}
+</div>
       </section>
+      <section>
+  <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-300">
+    Past
+  </h2>
+
+  <div className="grid gap-3">
+    {pastMatches.length ? (
+      pastMatches.map((match) => (
+        <MatchCard
+          key={match.id}
+          match={match}
+          blindMode={blindMode}
+        />
+      ))
+    ) : (
+      <p className="text-sm text-slate-400">
+        No matches from the last 3 days
+      </p>
+    )}
+  </div>
+</section>
     </main>
   );
 }
