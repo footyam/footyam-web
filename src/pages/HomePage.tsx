@@ -229,13 +229,19 @@ const pastMatches = ordered
 </h2>
 
 <div className="grid gap-3">
-  {upcomingMatches.map((match) => (
-    <MatchCard
-      key={match.id}
-      match={match}
-      blindMode={blindMode}
-    />
-  ))}
+  {upcomingMatches.length ? (
+    upcomingMatches.map((match) => (
+      <MatchCard
+        key={match.id}
+        match={match}
+        blindMode={blindMode}
+      />
+    ))
+  ) : (
+    <p className="text-sm text-slate-400">
+      No upcoming matches
+    </p>
+  )}
 </div>
       </section>
       <section>
