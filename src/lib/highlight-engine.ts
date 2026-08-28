@@ -325,6 +325,22 @@ async function fetchChannelUploads(channelId: keyof typeof CHANNELS) {
   return data.items ?? [];
 }
 
+function isVideoNearMatch(item: any, match: any) {
+  const publishedAt =
+    item?.contentDetails?.videoPublishedAt ??
+    item?.snippet?.publishedAt;
+
+  if (!publishedAt) return false;
+
+  const videoTime = new Date(publishedAt).getTime();
+  const kickoff = new Date(match.datetime).getTime();
+
+  const earliest = kickoff - 6 * 60 * 60 * 1000;
+  const latest = kickoff + 5 * 24 * 60 * 60 * 1000;
+
+  return videoTime >= earliest && videoTime <= latest;
+}
+
 function scoreVideoAgainstMatch(title: string, match: any) {
   const homeMatched = titleHasTeam(title, match.homeTeam);
   const awayMatched = titleHasTeam(title, match.awayTeam);
@@ -431,6 +447,8 @@ export async function runHighlightMonitorOnce(targetLeagueCode?: string) {
             continue;
           }
 
+          if (!isVideoNearMatch(item, match)) continue;
+          
           const score = scoreVideoAgainstMatch(title, match);
 
           if (score > bestScore) {
@@ -528,6 +546,8 @@ export async function runPlaylistMonitorOnce(targetLeagueCode?: string) {
             continue;
           }
 
+          if (!isVideoNearMatch(item, match)) continue;
+          
           const score = scoreVideoAgainstMatch(title, match);
 
           if (score > bestScore) {
@@ -643,6 +663,8 @@ export async function runChannelMonitorOnce(targetLeagueCode?: string) {
         if (existingVideos.some((video: any) => video.manual)) continue;
         if (existingVideos.some((video: any) => video.sourceId === channel.id)) continue;
 
+        if (!isVideoNearMatch(item, match)) continue;
+        
         const score = scoreVideoAgainstMatch(title, match);
 
         if (score > bestScore) {
