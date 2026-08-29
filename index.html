@@ -2,14 +2,34 @@
 <html lang="en">
   <head>
 <!-- Google tag (gtag.js) -->
-<script async 
-src="https://www.googletagmanager.com/gtag/js?id=G-BDNVFSY4CT"></script>
 <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+  const params = new URLSearchParams(window.location.search);
 
-  gtag('config', 'G-BDNVFSY4CT');
+  if (params.get('disable_analytics') === '1') {
+    localStorage.setItem('footyam_disable_analytics', '1');
+  }
+
+  if (params.get('enable_analytics') === '1') {
+    localStorage.removeItem('footyam_disable_analytics');
+  }
+
+  const analyticsDisabled =
+    localStorage.getItem('footyam_disable_analytics') === '1';
+
+  if (!analyticsDisabled) {
+    const script = document.createElement('script');
+    script.async = true;
+    script.src =
+      'https://www.googletagmanager.com/gtag/js?id=G-BDNVFSY4CT';
+    document.head.appendChild(script);
+
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    window.gtag = gtag;
+
+    gtag('js', new Date());
+    gtag('config', 'G-BDNVFSY4CT');
+  }
 </script>  
   <meta charset="UTF-8" />
   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
